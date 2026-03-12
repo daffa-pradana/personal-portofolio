@@ -1,0 +1,36 @@
+<nav class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200"
+     data-controller="navbar">
+  <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+    <a href="#" class="text-lg font-bold text-gray-900 tracking-tight">Daffa Pradana</a>
+
+    <%# Desktop nav %>
+    <ul class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
+      <li><a href="#about" class="hover:text-gray-900 transition-colors">About</a></li>
+      <li><a href="#projects" class="hover:text-gray-900 transition-colors">Projects</a></li>
+      <li><a href="#chat" class="hover:text-gray-900 transition-colors">AI Chat</a></li>
+      <li><a href="#contacts" class="hover:text-gray-900 transition-colors">Contacts</a></li>
+    </ul>
+
+    <%# Mobile hamburger %>
+    <button class="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900"
+            data-action="click->navbar#toggleMenu"
+            aria-label="Toggle menu">
+      <svg data-navbar-target="hamburger" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+      <svg data-navbar-target="close" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+
+  <%# Mobile menu %>
+  <div data-navbar-target="menu" class="hidden md:hidden border-t border-gray-100 bg-white">
+    <ul class="flex flex-col px-6 py-4 gap-4 text-sm font-medium text-gray-600">
+      <li><a href="#about" class="hover:text-gray-900 transition-colors" data-action="click->navbar#closeMenu">About</a></li>
+      <li><a href="#projects" class="hover:text-gray-900 transition-colors" data-action="click->navbar#closeMenu">Projects</a></li>
+      <li><a href="#chat" class="hover:text-gray-900 transition-colors" data-action="click->navbar#closeMenu">AI Chat</a></li>
+      <li><a href="#contacts" class="hover:text-gray-900 transition-colors" data-action="click->navbar#closeMenu">Contacts</a></li>
+    </ul>
+  </div>
+</nav>

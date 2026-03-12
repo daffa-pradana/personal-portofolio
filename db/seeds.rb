@@ -7,3 +7,16 @@
 #   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
+
+# Seed helper — reads a YAML file from db/seeds/ and upserts records.
+# Usage: seed_from_yaml(Project, "projects.yml", find_by: :title)
+def seed_from_yaml(model, filename, find_by:)
+  records = YAML.load_file(Rails.root.join("db/seeds", filename))
+  records.each do |attrs|
+    model.find_or_create_by!(find_by => attrs[find_by.to_s]) do |record|
+      record.assign_attributes(attrs)
+    end
+  end
+end
+
+seed_from_yaml(Project, "projects.yml", find_by: :title)
