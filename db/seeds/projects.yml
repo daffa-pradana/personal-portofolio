@@ -7,6 +7,7 @@
     - "Ruby on Rails"
     - "REST API"
     - "Jira API"
+    - "Sidekiq"
     - "PostgreSQL"
   live_url: "https://www.happy5.co/product/project-management-tracker"
   source_code_url: ~
@@ -19,7 +20,6 @@
     cut response time by 85%.
   tags:
     - "Ruby on Rails"
-    - "Hotwire"
     - "PostgreSQL"
     - "Sidekiq"
   live_url: ~
@@ -36,6 +36,6 @@
     - "Groq API"
     - "Hotwire"
     - "LLM"
-  live_url: ~
-  source_code_url: "https://github.com/daffa-pradana/personal-portofolio"
+  live_url: "#chat"
+  source_code_url: ~
   position: 3

@@ -22,9 +22,12 @@
             </div>
             <div class="flex gap-2">
               <% if project.live_url.present? %>
-                <a href="<%= project.live_url %>" target="_blank" rel="noopener noreferrer"
+                <% scroll_link = project.live_url.start_with?("#") %>
+                <a href="<%= project.live_url %>"
+                   <%= "data-turbo=\"false\"".html_safe if scroll_link %>
+                   <%= "target=\"_blank\" rel=\"noopener noreferrer\"".html_safe unless scroll_link %>
                    class="text-xs font-medium px-3 py-1.5 bg-gray-900 text-white rounded-full hover:bg-gray-700 transition-colors">
-                  Live Demo
+                  <%= scroll_link ? "Try Here!" : "Product Page" %>
                 </a>
               <% end %>
               <% if project.source_code_url.present? %>

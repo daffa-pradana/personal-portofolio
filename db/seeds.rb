@@ -13,9 +13,9 @@
 def seed_from_yaml(model, filename, find_by:)
   records = YAML.load_file(Rails.root.join("db/seeds", filename))
   records.each do |attrs|
-    model.find_or_create_by!(find_by => attrs[find_by.to_s]) do |record|
-      record.assign_attributes(attrs)
-    end
+    record = model.find_or_initialize_by(find_by => attrs[find_by.to_s])
+    record.assign_attributes(attrs)
+    record.save!
   end
 end
 
