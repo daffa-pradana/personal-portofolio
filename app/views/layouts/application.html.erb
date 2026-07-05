@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html class="scroll-smooth">
   <head>
     <title><%= content_for(:title) || "Personal Portofolio" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -23,8 +23,6 @@
   </head>
 
   <body>
-    <main class="container mx-auto mt-28 px-5 flex">
-      <%= yield %>
-    </main>
+    <%= yield %>
   </body>
 </html>

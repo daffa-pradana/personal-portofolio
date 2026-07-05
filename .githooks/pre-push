@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Block direct pushes to main. Changes to main must go through a Pull Request.
+# Enable with:  git config core.hooksPath .githooks
+
+protected_branch="main"
+remote="$1"
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [ "$remote_ref" = "refs/heads/$protected_branch" ]; then
+    echo "✋ Direct push to '$protected_branch' is blocked."
+    echo "   Create a branch and open a PR instead (see CONTRIBUTING.md)."
+    echo "   e.g.  git switch -c feat/my-change && git push -u origin feat/my-change"
+    exit 1
+  fi
+done
+
+exit 0

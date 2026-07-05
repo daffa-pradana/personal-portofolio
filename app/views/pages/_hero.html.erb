@@ -1,0 +1,30 @@
+<section class="min-h-screen flex items-center justify-center px-6 pt-16">
+  <div class="max-w-5xl mx-auto flex flex-col-reverse md:flex-row items-center gap-12 py-20">
+    <div class="flex-1 text-center md:text-left">
+      <p class="text-sm font-medium text-gray-500 uppercase tracking-widest mb-3">Hello, I'm</p>
+      <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 leading-tight">
+        Daffa Pradana
+      </h1>
+      <p class="text-xl md:text-2xl text-gray-500 font-light mb-8">
+        Seasoned Backend Engineer
+      </p>
+      <div class="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
+        <a href="/daffa-pradana-cv.pdf"
+           class="inline-flex items-center justify-center px-6 py-3 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-700 transition-colors"
+           download>
+          Download CV
+        </a>
+        <a href="#contacts"
+           class="inline-flex items-center justify-center px-6 py-3 border border-gray-900 text-gray-900 text-sm font-medium rounded-full hover:bg-gray-50 transition-colors">
+          Get In Touch
+        </a>
+      </div>
+    </div>
+
+    <div class="flex-shrink-0">
+      <div class="w-48 h-48 md:w-64 md:h-64 rounded-full overflow-hidden border-4 border-gray-100 shadow-lg">
+        <%= image_tag "profile.jpg.png", alt: "Daffa Pradana", class: "w-full h-full object-cover" %>
+      </div>
+    </div>
+  </div>
+</section>

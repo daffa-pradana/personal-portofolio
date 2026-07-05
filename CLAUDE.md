@@ -29,6 +29,13 @@ Personal portfolio website for **Daffa Pradana**, a Seasoned Backend Engineer sp
 
 ## Project Structure Conventions
 
+### Seed Data Convention
+- **Never hardcode seed data inline in `db/seeds.rb`**
+- All seed data lives in YAML files under `db/seeds/<model_name>.yml`
+- `seeds.rb` uses the `seed_from_yaml` helper to load and upsert records
+- Example: adding a new model's seed data → create `db/seeds/articles.yml`, then add `seed_from_yaml(Article, "articles.yml", find_by: :title)` to `seeds.rb`
+- YAML `~` means `nil`; use `find_or_create_by!` so seeds are always idempotent
+
 ### Rails Conventions (follow strictly)
 - Follow Rails 8 conventions and defaults wherever possible
 - Use `params.expect()` (Rails 8 style) instead of `params.require().permit()`
