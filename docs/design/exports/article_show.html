@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Design export — Article detail · Daffa Pradana</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+  <style>
+  *,*::before,*::after{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:#fff;color:#0f172a;-webkit-font-smoothing:antialiased;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",ui-sans-serif,system-ui,sans-serif}
+  a{color:#0f172a}
+
+  /* --- the whole card is one link ------------------------------------------
+     Structure: [data-card] is position:relative and contains a stretched
+     <a data-stretch> (absolute inset-0, z-1). Hover lifts the card, underlines
+     the title and reveals the destination chip.
+     Tailwind: group + group-hover:-translate-y-1 group-hover:shadow-lg …      */
+  [data-card]:hover{transform:translateY(-4px);box-shadow:0 14px 30px -14px rgba(15,23,42,.28);border-color:#cbd5e1}
+  [data-card]:hover [data-role="title"]{text-decoration-color:#0f172a}
+  [data-card]:hover [data-role="arrow"]{opacity:1;transform:translateY(0)}
+
+  /* --- the card's own button is a separate target --------------------------
+     While the pointer is on [data-btn] the card RECEDES (lift drops to 1px,
+     chip fades to 25%, underline clears) and the button takes over.
+     Tailwind: has-[[data-btn]:hover]:… (v3.4+) or a 3-line Stimulus fallback. */
+  [data-card]:has([data-btn]:hover){transform:translateY(-1px);box-shadow:0 4px 12px -6px rgba(15,23,42,.16);border-color:#e2e8f0}
+  [data-card]:has([data-btn]:hover) [data-role="title"]{text-decoration-color:transparent}
+  [data-card]:has([data-btn]:hover) [data-role="arrow"]{opacity:.25}
+
+  /* --- buttons: black pill is always the primary --------------------------- */
+  [data-btn],[data-cta]{background:#0f172a}
+  [data-btn]:hover,[data-cta]:hover{background:#000;transform:translateY(-1px);box-shadow:0 0 0 4px rgba(15,23,42,.13)}
+  [data-cta-ghost]:hover{border-color:#0f172a}
+  [data-nav]:hover{color:#0f172a}
+  [data-suggest]:hover,[data-contact]:hover{border-color:#cbd5e1;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+
+  /* --- keyboard: the stretched link and the button focus independently ----- */
+  a:focus-visible,button:focus-visible{outline:2px solid #0f172a;outline-offset:3px}
+  </style>
+</head>
+<body>
+<!--
+  ==========================================================================
+  DESIGN EXPORT · ARTICLE DETAIL
+  Generated from the Claude design canvas — treat as the source of truth for
+  spacing, colour and structure. Do not hand-edit; re-export instead.
+  Implements: app/views/articles/show.html.erb
+  Sections: header · article head (badge, title, subtitle, byline, tags, CTA) · hero image · prose · end CTA · read next · footer
+
+  HOW TO READ IT
+    Everything is inline-styled on purpose: every value you need is on the
+    element itself. Interaction states are the only thing in <style>, so the
+    hover/focus behaviour is described in exactly one place (bottom of head).
+
+  TOKEN MAP  (hex → Tailwind)
+    #ffffff  white          page background
+    #f8fafc  slate-50       alternating section tint, code block
+    #f1f5f9  slate-100      tag pills, chat bubble
+    #e2e8f0  slate-200      all 1px borders
+    #cbd5e1  slate-300      card hover border, ghost-button border
+    #94a3b8  slate-400      eyebrows, meta, placeholders
+    #64748b  slate-500      nav links, card body copy
+    #475569  slate-600      long body copy, pill text
+    #1f2937  gray-800       article prose
+    #0f172a  slate-900      ink, filled buttons, active nav
+
+  SCALE
+    container        max-w-[1152px] mx-auto px-6
+    header           h-16, sticky, bg-white/90 backdrop-blur, border-b
+    section rhythm   py-[88px] (hero py-28)
+    radius           cards rounded-xl(12) · pills rounded-md(6) · buttons rounded-full
+    type             h1 60/44/40 · h2 32 · card title 16 · body 15 · nav 14 · pills 12
+    prose            Source Serif 4 20/1.78 on a 680px measure
+
+  INTERACTION HOOKS
+    [data-card]       card = link. relative; contains the stretched <a>
+    [data-stretch]    absolute inset-0 z-1 — makes the whole card clickable
+                      (real href: ⌘-click and middle-click work, no JS)
+    [data-btn]        the card's own action. relative z-2, sits above the
+                      stretched link, so no stopPropagation is needed
+    [data-role=arrow] destination chip, revealed on card hover
+    [data-role=title] title underline, revealed on card hover
+    tag pills         pointer-events:none — static labels, never filters
+  ========================================================================== -->
+
+<header style="position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid #e2e8f0">
+  <div style="max-width:1152px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between">
+    <a href="landing_page.html" style="font-size:16px;font-weight:700;letter-spacing:-.01em;text-decoration:none;color:#0f172a">Daffa Pradana</a>
+    <nav style="display:flex;align-items:center;gap:32px">
+      <a data-nav href="landing_page.html#about" style="font-size:14px;color:#64748b;text-decoration:none;transition:color .15s ease">About</a>
+      <a data-nav href="landing_page.html#projects" style="font-size:14px;color:#64748b;text-decoration:none;transition:color .15s ease">Projects</a>
+      <a data-nav-active href="articles_index.html" style="font-size:14px;font-weight:600;color:#0f172a;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:7px;text-decoration-color:#0f172a">Articles</a>
+      <a data-nav href="landing_page.html#ai-chat" style="font-size:14px;color:#64748b;text-decoration:none;transition:color .15s ease">AI Chat</a>
+      <a data-nav href="landing_page.html#contacts" style="font-size:14px;color:#64748b;text-decoration:none;transition:color .15s ease">Contacts</a>
+    </nav>
+  </div>
+</header>
+
+<article style="background:#fff;padding:0 0 88px">
+
+  <div data-col style="max-width:680px;margin:0 auto;padding:56px 24px 0">
+    <a href="articles_index.html" style="display:inline-flex;align-items:center;gap:7px;font-size:13px;color:#64748b;text-decoration:none;margin-bottom:30px">&larr; All articles</a>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+      <span data-badge style="padding:5px 11px;background:#0f172a;color:#fff;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.12em">CASE STUDY</span>
+    </div>
+    <h1 style="margin:0 0 16px;font-size:44px;font-weight:700;line-height:1.12;letter-spacing:-.03em;color:#0f172a;text-wrap:balance">H5 &ndash; Jira Project Integration</h1>
+    <p style="margin:0 0 26px;font-size:20px;line-height:1.5;color:#64748b;text-wrap:pretty">Two-way OKR sync between Happy5 and Jira &mdash; and the three failures that shaped it.</p>
+    <div style="display:flex;align-items:center;gap:12px;padding-bottom:22px;border-bottom:1px solid #e2e8f0">
+      <span style="flex:none;width:40px;height:40px;border-radius:999px;background:repeating-linear-gradient(135deg,#eef1f5 0 6px,#e8edf3 6px 12px)"></span>
+      <span style="display:flex;flex-direction:column;gap:3px">
+        <span style="font-size:14px;font-weight:600;color:#0f172a">Daffa Pradana</span>
+        <span style="font-size:13px;color:#94a3b8">Feb 18, 2026 &middot; 8 min read</span>
+      </span>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:22px;pointer-events:none">
+      <span style="padding:5px 10px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">Ruby on Rails</span>
+      <span style="padding:5px 10px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">REST API</span>
+      <span style="padding:5px 10px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">Jira API</span>
+      <span style="padding:5px 10px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">Sidekiq</span>
+    </div>
+    <div style="margin-top:24px">
+      <a data-btn href="https://happy5.co" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:7px;padding:12px 20px;color:#fff;border-radius:999px;font-size:14px;font-weight:600;text-decoration:none;transition:background .16s ease,transform .16s ease,box-shadow .16s ease">Product Page <span style="font-size:12px;opacity:.8">&#8599;</span></a>
+    </div>
+  </div>
+
+  <div data-col style="max-width:680px;margin:34px auto 0;padding:0 24px">
+    <div style="aspect-ratio:16/9;border-radius:12px;background:repeating-linear-gradient(135deg,#eef1f5 0 10px,#e8edf3 10px 20px);display:flex;align-items:center;justify-content:center">
+      <span style="font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.09em;color:#94a3b8">HERO IMAGE &mdash; SYNC FLOW DIAGRAM</span>
+    </div>
+  </div>
+
+  <div data-col data-prose style="max-width:680px;margin:0 auto;padding:0 24px;font-family:'Source Serif 4',Georgia,serif;font-size:20px;line-height:1.78;color:#1f2937">
+    <p style="margin:32px 0 0">Happy5 tracks OKRs. Engineering tracks work in Jira. For two years those were separate rituals: someone exported issues on Friday, pasted progress into a goal, and the number was stale by Monday. The brief was one sentence &mdash; make the goal update itself.</p>
+    <p style="margin:26px 0 0">The naive version took an afternoon: poll the Jira API for issues matching a saved JQL query, sum story points, write progress. It also broke within a week. Jira rate-limits per app, not per tenant, so a handful of noisy workspaces starved everyone else&rsquo;s sync.</p>
+    <h2 style="margin:42px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',ui-sans-serif,system-ui,sans-serif;font-size:26px;font-weight:700;letter-spacing:-.015em;line-height:1.3;color:#0f172a">Webhooks first, polling as a safety net</h2>
+    <p style="margin:20px 0 0">The fix was to invert it. Jira pushes an event, we enqueue one job per issue, and a nightly reconciliation job catches whatever the webhook dropped. Every job is keyed so a retry can&rsquo;t double-count:</p>
+    <pre style="margin:24px 0 0;padding:18px 20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;overflow-x:auto;font-family:ui-monospace,Menlo,monospace;font-size:13.5px;line-height:1.65;color:#0f172a">class SyncIssueJob
+  include Sidekiq::Job
+  sidekiq_options retry: 5, lock: :until_executed
+
+  def perform(issue_id, event_ts)
+    issue = JiraIssue.lock.find_by!(external_id: issue_id)
+    return if issue.synced_at &amp;&amp; issue.synced_at &gt;= Time.at(event_ts)
+
+    Goals::RecalculateProgress.call(issue.goal)
+    issue.update!(synced_at: Time.at(event_ts))
+  end
+end</pre>
+    <p style="margin:26px 0 0">The <code style="font-family:ui-monospace,Menlo,monospace;font-size:17px;background:#f1f5f9;padding:2px 6px;border-radius:4px">synced_at</code> guard is the whole trick. Events arrive out of order surprisingly often, and an idempotency key alone doesn&rsquo;t protect you from an <i>older</i> event overwriting a newer number.</p>
+    <blockquote style="margin:34px 0 0;padding:2px 0 2px 24px;border-left:2px solid #0f172a;font-size:21px;line-height:1.6;color:#0f172a;font-style:italic">The backfill was the real deadline: 40,000 issues, one shot, during business hours.</blockquote>
+    <p style="margin:30px 0 0">We shipped the backfill as a throttled batch &mdash; 200 issues per tick, a Redash query watching lag, and a kill switch on a feature flag. It finished in four hours and nobody noticed, which is the best outcome a migration can get.</p>
+    <h2 style="margin:42px 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',ui-sans-serif,system-ui,sans-serif;font-size:26px;font-weight:700;letter-spacing:-.015em;line-height:1.3;color:#0f172a">What it changed</h2>
+    <p style="margin:20px 0 0">Goal progress went from a Friday chore to a live number, and the support queue lost its most boring recurring ticket. The pattern &mdash; webhook, keyed job, nightly reconcile &mdash; became the template for the next two integrations we built.</p>
+  </div>
+
+  <div data-col style="max-width:680px;margin:44px auto 0;padding:0 24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:26px;border-top:1px solid #e2e8f0">
+      <a href="articles_index.html" style="font-size:13px;color:#64748b;text-decoration:none">&larr; All articles</a>
+      <a data-btn href="https://happy5.co" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:7px;padding:10px 18px;color:#fff;border-radius:999px;font-size:13px;font-weight:600;text-decoration:none;transition:background .16s ease,transform .16s ease,box-shadow .16s ease">Product Page <span style="font-size:11px;opacity:.8">&#8599;</span></a>
+    </div>
+
+    <div style="margin-top:36px">
+      <span style="display:block;font-size:12px;font-weight:600;letter-spacing:.2em;color:#94a3b8;margin-bottom:14px">READ NEXT</span>
+      <article data-card style="position:relative;display:flex;gap:18px;padding:16px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 2px rgba(15,23,42,.04);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease">
+        <a data-stretch href="#" aria-label="Read the article: Idempotent Sidekiq jobs, cheaply" style="position:absolute;inset:0;z-index:1;border-radius:12px"></a>
+        <div style="flex:none;width:164px;aspect-ratio:16/10;border-radius:8px;background:repeating-linear-gradient(135deg,#eef1f5 0 10px,#e8edf3 10px 20px);display:flex;align-items:center;justify-content:center">
+          <span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.09em;color:#94a3b8">COVER</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:.14em;color:#94a3b8">BLOG<span style="color:#e2e8f0;font-weight:400">|</span><span style="font-weight:500;letter-spacing:0;font-size:12px">7 min read &middot; Nov 2025</span></div>
+          <h3 data-role="title" style="margin:0;font-size:16px;font-weight:700;line-height:1.35;color:#0f172a;text-decoration:underline;text-decoration-color:transparent;text-decoration-thickness:2px;text-underline-offset:3px;transition:text-decoration-color .18s ease">Idempotent Sidekiq jobs, cheaply</h3>
+          <p style="margin:0;font-size:14px;line-height:1.6;color:#64748b;text-wrap:pretty">A Redis key, a database constraint, and the retry that stops being scary.</p>
+        </div>
+        <span data-role="arrow" style="position:absolute;top:16px;right:16px;font-size:14px;color:#0f172a;opacity:0;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease">&rarr;</span>
+      </article>
+    </div>
+  </div>
+</article>
+
+<footer style="border-top:1px solid #e2e8f0;background:#fff">
+  <div style="max-width:1152px;margin:0 auto;padding:22px 24px;display:flex;align-items:center;justify-content:space-between;gap:24px">
+    <nav style="display:flex;align-items:center;gap:22px">
+      <a data-nav href="landing_page.html#about" style="font-size:13px;color:#64748b;text-decoration:none">About</a>
+      <a data-nav href="landing_page.html#projects" style="font-size:13px;color:#64748b;text-decoration:none">Projects</a>
+      <a data-nav href="articles_index.html" style="font-size:13px;color:#64748b;text-decoration:none">Articles</a>
+      <a data-nav href="landing_page.html#ai-chat" style="font-size:13px;color:#64748b;text-decoration:none">AI Chat</a>
+      <a data-nav href="landing_page.html#contacts" style="font-size:13px;color:#64748b;text-decoration:none">Contacts</a>
+    </nav>
+    <span style="font-size:13px;color:#94a3b8">Forged with passion in Depok &copy; daffa-pradana</span>
+  </div>
+</footer>
+</body>
+</html>
