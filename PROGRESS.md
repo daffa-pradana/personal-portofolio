@@ -107,7 +107,17 @@ not as a side effect of a version bump.
 - [x] Seed data: 3 real projects in `db/seeds/projects.yml` via `seed_from_yaml` helper
 - [x] Deployed to Railway: `personal-portofolio-production-cdcf.up.railway.app` (region `asia-southeast1`)
 - [ ] Partials verified against `docs/design/exports/landing_page.html` (design exports came after this build — worth a pass to confirm alignment)
-- [ ] Smooth-scroll navigation (Stimulus) for navbar anchors — confirm if `navbar_controller.js` already covers this
+- [x] Smooth-scroll navigation — **done in CSS, not Stimulus.** The layout's
+      `<html class="scroll-smooth">` covers navbar anchors *and* article
+      `button_url` anchors automatically, which is the "build it once,
+      generically" intent from CLAUDE.md Batch 1 step 5 with no JS at all.
+      `navbar_controller.js` only handles the mobile menu toggle.
+  - [ ] Minor: the navbar is `fixed` at `h-16` (64px) and no section has
+        `scroll-mt-16`. Section `py-24` padding absorbs it, so headings land
+        ~32px below the navbar instead of the designed 96px. Nothing is hidden.
+- [x] "Download CV" button no longer 404s — it was hardcoded to
+      `/daffa-pradana-cv.pdf`, a file that has never existed in `public/`. Now
+      driven by `SiteSetting[:cv_url]` and rendered only when that's set.
 - [ ] Responsive QA (mobile/tablet/desktop breakpoints)
 
 ## Batch 2: Articles CMS (Blog + Case Studies, Unified) — Next Up
@@ -196,6 +206,23 @@ not as a side effect of a version bump.
 ## Session Log
 
 Brief notes per work session — what got done, what decisions were made, what's blocked.
+
+### 2026-08-08 (later still — SiteSetting + dynamic CV button)
+- **The résumé PDF is deliberately NOT in this repo, and must never be.** It's a
+  PII document and the repo is public; git history is permanent, so committing
+  it once is effectively irreversible. Daffa raised the concern himself and it
+  was the right call. The CV is hosted externally and referenced by URL.
+- `SiteSetting` model with `SiteSetting[:key]` / `SiteSetting[:key] = value`.
+  Blank and missing collapse to `nil`, since callers only ask "is this
+  configured?".
+- `seed_from_yaml` gained `update_existing: false`, used for site settings:
+  seeding creates missing keys but never overwrites a value set through the
+  admin UI. Verified by seeding, setting a value, and re-seeding.
+- Hero renders the CV button only when `cv_url` is set. When it isn't, "Get In
+  Touch" promotes to the filled style so the hero doesn't look truncated.
+- Batch 1 audit findings from this session are recorded in the Batch 1 section:
+  smooth-scroll was done in CSS all along, and the design-export comparison plus
+  responsive QA are still genuinely outstanding.
 
 ### 2026-08-08 (later still — Rails 8 authentication)
 - Ran `bin/rails generate authentication`. The one non-obvious consequence:

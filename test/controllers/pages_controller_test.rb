@@ -40,4 +40,34 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
   end
+
+  test "hides the CV button when no cv_url is configured" do
+    get root_path
+
+    assert_select "a", text: "Download CV", count: 0
+  end
+
+  test "shows the CV button pointing at the configured cv_url" do
+    SiteSetting[:cv_url] = "https://example.com/daffa-cv.pdf"
+
+    get root_path
+
+    assert_select "a[href=?]", "https://example.com/daffa-cv.pdf", text: "Download CV"
+  end
+
+  test "opens an externally hosted CV in a new tab rather than downloading it" do
+    SiteSetting[:cv_url] = "https://example.com/daffa-cv.pdf"
+
+    get root_path
+
+    assert_select "a[href^='http'][target='_blank'][rel='noopener noreferrer']", text: "Download CV"
+  end
+
+  test "uses the download attribute for a same-origin CV path" do
+    SiteSetting[:cv_url] = "/daffa-cv.pdf"
+
+    get root_path
+
+    assert_select "a[href=?][download]", "/daffa-cv.pdf", text: "Download CV"
+  end
 end
