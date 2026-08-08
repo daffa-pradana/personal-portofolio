@@ -7,13 +7,14 @@
 > in full each time.
 
 **Last updated:** 2026-08-08
-**Current focus:** Batch 2 — Articles CMS (Project→Article migration done; next is Action Text + Active Storage)
+**Current focus:** Batch 2 — Articles CMS (migration + Action Text/Active Storage done; next is the auth generator, then admin CRUD)
 
 ---
 
 ## 🚨 Action Needed First
 
-- [ ] **Nothing blocking.** Next up is Action Text + Active Storage (Batch 2).
+- [ ] **Nothing blocking.** Next up is `bin/rails generate authentication`,
+      then the admin Article CRUD with the Trix editor.
 - [x] ~~CI red on `main`~~ — fixed by PR #30 (Ruby 3.4.7 + Rails 8.1.3.1),
       merged 2026-08-08. Root cause: brakeman's `EOLRails` rule is
       `(Date.today + 60) >= eol_date`; Rails 8.0's EOL is 2026-10-07, so the
@@ -112,9 +113,19 @@ not as a side effect of a version bump.
 - [x] Resolve Project→Article migration (see Resolved Drift above)
 - [x] Extend migrated `Article` model with remaining fields (article_type, status,
       slug, subtitle, published_at, reading_time, button_label, button_url)
-- [ ] Action Text + Active Storage set up — adds `body` (rich text) and
-      `cover_image`. The `reading_time` column exists but stays `nil` until
-      `body` does, since it's computed from body word count (~200 wpm)
+- [x] Action Text + Active Storage set up — `has_rich_text :body`,
+      `has_one_attached :cover_image`, and `reading_time` now computed on save
+      from body word count at 200 wpm (`Article::WORDS_PER_MINUTE`), rounded up,
+      `nil` when there's no body. Landing page cards render `cover_image` when
+      attached and fall back to the placeholder SVG otherwise.
+  - [ ] **Production Active Storage service is `:local` disk**
+        (`config/environments/production.rb:25`). Railway's container filesystem
+        is ephemeral, so uploads would vanish on every redeploy. Needs an S3/R2
+        service before the admin CRUD is used in production — not urgent while
+        deployment is paused, but a real trap to remember.
+  - [ ] Seed articles have no `body` yet, so their `reading_time` is `nil`.
+        Deliberate: writing filler article content isn't Claude's call.
+        Add real bodies via the admin editor once it exists.
 - [ ] `bin/rails generate authentication` run for admin
 - [ ] Admin namespace: Article CRUD (type selector, Trix editor)
 - [ ] `_card.html.erb` partial with stretched-link pattern (shared: landing
@@ -166,6 +177,19 @@ not as a side effect of a version bump.
 ## Session Log
 
 Brief notes per work session — what got done, what decisions were made, what's blocked.
+
+### 2026-08-08 (later — Action Text + Active Storage)
+- `bin/rails action_text:install`; both migrations applied. Verified the
+  generated wiring actually resolves rather than assuming: `stylesheet_link_tag
+  :app` emits `actiontext.css` alongside `application.css` and `tailwind.css`,
+  and the importmap resolves `trix` + `@rails/actiontext` to real asset paths.
+- `reading_time` is stored on save, not computed on read, so the articles index
+  can show it without loading every body.
+- `PagesController#home` uses `.with_attached_cover_image` to avoid an N+1 once
+  cards start rendering images.
+- Railway deployment confirmed down (HTTP 404 on the old URL) and paused
+  indefinitely — the account wasn't upgraded. All work is local-only for now,
+  and `PROGRESS.md`'s Reference Info section is stale about the site being live.
 
 ### 2026-08-08
 - Confirmed local `main` == `origin/main` at `61be550`; no drift, nothing to pull.
