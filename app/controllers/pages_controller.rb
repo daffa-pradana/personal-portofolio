@@ -9,5 +9,7 @@ class PagesController < ApplicationController
                            .with_attached_cover_image
                            .order(:position)
                            .limit(3)
+
+    @cv_url = SiteSetting[:cv_url]
   end
 end
