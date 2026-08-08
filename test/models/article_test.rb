@@ -74,4 +74,69 @@ class ArticleTest < ActiveSupport::TestCase
 
     assert_equal [ articles(:jira_integration), articles(:goal_custom_order) ], results.to_a
   end
+
+  test "calculates reading time from body word count" do
+    article = Article.create!(title: "Four Hundred Words", body: "<p>#{words(400)}</p>")
+
+    assert_equal 2, article.reading_time
+  end
+
+  test "rounds a partial reading minute up" do
+    article = Article.create!(title: "Barely Anything", body: "<p>#{words(10)}</p>")
+
+    assert_equal 1, article.reading_time
+  end
+
+  test "ignores markup when counting words" do
+    plain = Article.create!(title: "Plain", body: "<p>#{words(200)}</p>")
+    marked_up = Article.create!(title: "Marked Up", body: "<h2>#{words(200)}</h2>")
+
+    assert_equal plain.reading_time, marked_up.reading_time
+  end
+
+  test "leaves reading time nil when there is no body" do
+    article = Article.create!(title: "Nothing Written Yet")
+
+    assert_nil article.reading_time
+  end
+
+  test "recalculates reading time when the body changes" do
+    article = Article.create!(title: "Growing Post", body: "<p>#{words(100)}</p>")
+    assert_equal 1, article.reading_time
+
+    article.update!(body: "<p>#{words(1000)}</p>")
+
+    assert_equal 5, article.reading_time
+  end
+
+  test "clears reading time when the body is emptied" do
+    article = Article.create!(title: "Emptied Post", body: "<p>#{words(400)}</p>")
+    assert_equal 2, article.reading_time
+
+    article.update!(body: "")
+
+    assert_nil article.reading_time
+  end
+
+  test "accepts a cover image attachment" do
+    article = articles(:jira_integration)
+
+    article.cover_image.attach(
+      io: file_fixture("cover_image.png").open,
+      filename: "cover_image.png",
+      content_type: "image/png"
+    )
+
+    assert article.reload.cover_image.attached?
+    assert_equal "image/png", article.cover_image.content_type
+  end
+
+  test "has no cover image by default" do
+    assert_not articles(:goal_custom_order).cover_image.attached?
+  end
+
+  private
+    def words(count)
+      Array.new(count) { "word" }.join(" ")
+    end
 end
