@@ -13,14 +13,13 @@
 
 ## 🚨 Action Needed First
 
-- [ ] **CI is red on `main` for a reason unrelated to any PR.** `bin/brakeman`
-      exits 3 on the `EOLRails` check — "Support for Rails 8.0.4 ends on
-      2026-10-07" — which started firing between 2026-08-02 (last green run)
-      and 2026-08-08 as the 60-days-to-EOL threshold was crossed. Verified by
-      running brakeman against a pristine `main` worktree: same warning, same
-      exit 3. This blocks every PR until resolved. Options, for Daffa to pick:
-      merge Dependabot PR #7 (rails 8.0.4 → 8.1.3), or add a brakeman ignore
-      for `EOLRails`. Deliberately **not** bundled into the migration PR.
+- [ ] **Nothing blocking.** Next up is Action Text + Active Storage (Batch 2).
+- [x] ~~CI red on `main`~~ — fixed by PR #30 (Ruby 3.4.7 + Rails 8.1.3.1),
+      merged 2026-08-08. Root cause: brakeman's `EOLRails` rule is
+      `(Date.today + 60) >= eol_date`; Rails 8.0's EOL is 2026-10-07, so the
+      window opened exactly on 2026-08-08 and brakeman started exiting 3 on
+      every branch, `main` included. See the Ruby/Rails upgrade notes below —
+      the Rails bump could not land without the Ruby bump.
 - [x] ~~Migrate `Project` → unified `Article` model~~ — done 2026-08-08 on
       branch `feat/project-to-article-migration`. Table renamed in place with
       data preserved; rollback path tested both directions.
@@ -55,10 +54,39 @@
   `Project` and would have silently ordered the future articles index by
   `position` instead of `published_at`. Callers now order explicitly, matching
   the canonical `Article.case_study.published.order(:position).limit(3)`.
-- **minitest pinned to `~> 5.25`.** Rails 8.0's `line_filtering.rb` defines
-  `run(reporter, options = {})` but minitest 6 calls `run` with three args, so
-  *any* `bin/rails test` died with `ArgumentError`. Latent until now because the
-  repo had zero tests.
+- **minitest was briefly pinned to `~> 5.25`, then unpinned.** Rails 8.0's
+  `line_filtering.rb` defines `run(reporter, options = {})` but minitest 6 calls
+  `run` with three args, so *any* `bin/rails test` died with `ArgumentError` —
+  latent until this PR because the repo had zero tests. Rails 8.1.3.1 rewrote
+  that file to dispatch on `Minitest::VERSION` with separate `MT5`/`MT6`
+  adapters, so once PR #30 landed the pin became dead code and was removed.
+
+---
+
+## Ruby 3.4.7 + Rails 8.1.3.1 upgrade (PR #30, merged 2026-08-08)
+
+Done to unblock CI, not for its own sake. Two facts worth keeping:
+
+- **The two bumps are inseparable.** Rails 8.1 clears the brakeman EOL check
+  (its `RAILS_EOL_DATES` table has no entry above `8.0.99`), but actionview
+  8.1.x uses anonymous parameter forwarding inside a block — Ruby 3.4 syntax.
+  On Ruby 3.3.0 that is a parse error, so the app dies before booting. Ruby 3.4
+  alone leaves `scan_ruby` red; Rails 8.1 alone won't boot. Neither half passes
+  CI on its own.
+- **`rails`'s gemspec declares `required_ruby_version >= 3.2.0`,** which
+  understates what the code needs. Bundler resolves it happily and it only
+  fails at parse time — nothing warns you at install.
+
+`Dockerfile`'s `ARG RUBY_VERSION` must move in step with `.ruby-version`: CI
+reads `.ruby-version`, but **Railway builds from the Dockerfile**. Bumping only
+the former would go green in CI and then fail the deploy on the same
+SyntaxError. Verified with a local `docker build` (exit 0) before merging —
+`bundle install` under `BUNDLE_DEPLOYMENT=1`, `bootsnap precompile`, and
+`assets:precompile` all pass on 3.4.7.
+
+`config.load_defaults` stays at `8.0` deliberately. Moving it to `8.1` is a
+separate change with its own behavioral surface — worth doing eventually, but
+not as a side effect of a version bump.
 
 ---
 
@@ -149,12 +177,16 @@ Brief notes per work session — what got done, what decisions were made, what's
   (see Resolved Drift above for the decisions). Verified: migration up, rollback
   down (data restored), up again, seeds idempotent across two runs, 12 model tests
   green, rubocop clean, landing page renders byte-equivalent output.
-- **Blocker found:** brakeman `EOLRails` now fails CI on `main` itself. See
-  Action Needed First.
-- 11 open Dependabot PRs, oldest from 2026-03-12. Three are non-trivial:
-  #7 rails 8.0.4→8.1.3, #23 puma 7→8, #22 solid_cable 3→4. Suggested handling
-  them in a dedicated pass *after* the migration lands, not alongside it —
-  except #7 may get pulled forward to unblock CI.
+- **Blocker found and fixed same day:** brakeman `EOLRails` started failing CI
+  on `main` itself. Diagnosed, then resolved via PR #30 (Ruby 3.4.7 + Rails
+  8.1.3.1) — see the upgrade section above. Dependabot #7 (rails 8.1.3) is
+  superseded: it proposed an older patch and could never have passed CI alone,
+  since it lacked the Ruby bump. Still open as of end of session; safe to close.
+- After #30 merged, `feat/project-to-article-migration` was rebased onto it and
+  the minitest pin removed.
+- 10 remaining open Dependabot PRs, oldest from 2026-03-12. Two are non-trivial:
+  #23 puma 7→8, #22 solid_cable 3→4. Worth a dedicated pass whenever, not
+  urgent.
 - `CONTRIBUTING.md` still says "Deployment is currently paused until 25 July 2026",
   which is now past. Needs a one-line cleanup.
 

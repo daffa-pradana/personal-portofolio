@@ -394,7 +394,6 @@ DEPENDENCIES
   debug
   importmap-rails
   kamal
-  minitest (~> 5.25)
   pg (~> 1.1)
   propshaft
   puma (>= 5.0)
