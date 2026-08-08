@@ -13,8 +13,10 @@
 
 ## 🚨 Action Needed First
 
-- [ ] **Nothing blocking.** Next up is `bin/rails generate authentication`,
-      then the admin Article CRUD with the Trix editor.
+- [ ] **Nothing blocking.** Next up is the admin namespace: `Admin::BaseController`
+      (auth gate) and the Article CRUD with the Trix editor.
+- [ ] Create a local admin user before using the CMS:
+      `ADMIN_EMAIL=... ADMIN_PASSWORD=... bin/rails db:seed`
 - [x] ~~CI red on `main`~~ — fixed by PR #30 (Ruby 3.4.7 + Rails 8.1.3.1),
       merged 2026-08-08. Root cause: brakeman's `EOLRails` rule is
       `(Date.today + 60) >= eol_date`; Rails 8.0's EOL is 2026-10-07, so the
@@ -126,7 +128,24 @@ not as a side effect of a version bump.
   - [ ] Seed articles have no `body` yet, so their `reading_time` is `nil`.
         Deliberate: writing filler article content isn't Claude's call.
         Add real bodies via the admin editor once it exists.
-- [ ] `bin/rails generate authentication` run for admin
+- [x] `bin/rails generate authentication` run for admin — `User` + `Session`
+      models, `Authentication` concern, sessions/passwords controllers and views.
+      Auth views retinted from the generator's blue to the black-and-white
+      palette in CLAUDE.md.
+  - [x] **`PagesController` opts out via `allow_unauthenticated_access`.** The
+        generator adds `before_action :require_authentication` to
+        `ApplicationController`, which locks *every* controller by default —
+        the landing page returned 403 until the opt-out was added. Every future
+        visitor-facing controller (articles index, article show, chat) needs the
+        same opt-out. `test/controllers/pages_controller_test.rb` guards this.
+  - [x] Admin user seeded from `ADMIN_EMAIL` / `ADMIN_PASSWORD` env vars — see
+        `db/seeds.rb`. Deliberately not in `db/seeds/*.yml`, since a password
+        can't be committed. Seeding is a no-op when the vars are absent.
+  - [ ] No admin user exists in the local dev DB yet. Create one with:
+        `ADMIN_EMAIL=... ADMIN_PASSWORD=... bin/rails db:seed`
+  - [ ] `config/environments/production.rb:61` still has the generator's
+        placeholder `default_url_options = { host: "example.com" }`. Password
+        reset links would point at the wrong host. Parked with deployment.
 - [ ] Admin namespace: Article CRUD (type selector, Trix editor)
 - [ ] `_card.html.erb` partial with stretched-link pattern (shared: landing
       page "My Latest Projects" + articles index)
@@ -177,6 +196,19 @@ not as a side effect of a version bump.
 ## Session Log
 
 Brief notes per work session — what got done, what decisions were made, what's blocked.
+
+### 2026-08-08 (later still — Rails 8 authentication)
+- Ran `bin/rails generate authentication`. The one non-obvious consequence:
+  `ApplicationController` gains `before_action :require_authentication`, so the
+  **public landing page started returning 403** until `PagesController` opted
+  out. Worth remembering for every visitor-facing controller still to come.
+- Admin credentials come from env vars, never the repo. Verified `db:seed` both
+  skips cleanly without them and creates/updates the user with them.
+- Verified the real sign-in flow over HTTP, not just via tests: wrong password
+  redirects back to the form, correct password redirects to root and sets the
+  signed `session_id` cookie.
+- Removed the throwaway probe user afterwards, so the dev DB has no account with
+  a password chosen by Claude.
 
 ### 2026-08-08 (later — Action Text + Active Storage)
 - `bin/rails action_text:install`; both migrations applied. Verified the
