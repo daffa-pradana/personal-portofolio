@@ -20,3 +20,24 @@ def seed_from_yaml(model, filename, find_by:)
 end
 
 seed_from_yaml(Article, "articles.yml", find_by: :slug)
+
+# The admin user is the one exception to the "seed data lives in db/seeds/*.yml"
+# convention: a password can't be committed to the repo. Credentials come from
+# the environment instead, and seeding does nothing when they're absent, so
+# `db:seed` stays safe to run anywhere.
+#
+#   ADMIN_EMAIL=you@example.com ADMIN_PASSWORD=... bin/rails db:seed
+#
+# Re-running with a different ADMIN_PASSWORD resets that user's password, which
+# is also how to recover from a forgotten one in development.
+admin_email = ENV["ADMIN_EMAIL"].presence
+admin_password = ENV["ADMIN_PASSWORD"].presence
+
+if admin_email && admin_password
+  admin = User.find_or_initialize_by(email_address: admin_email)
+  admin.password = admin_password
+  admin.save!
+  puts "Seeded admin user: #{admin.email_address}"
+else
+  puts "Skipped admin user — set ADMIN_EMAIL and ADMIN_PASSWORD to create one."
+end
