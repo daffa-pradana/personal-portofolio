@@ -9,7 +9,7 @@
 #   end
 
 # Seed helper — reads a YAML file from db/seeds/ and upserts records.
-# Usage: seed_from_yaml(Project, "projects.yml", find_by: :title)
+# Usage: seed_from_yaml(Article, "articles.yml", find_by: :slug)
 def seed_from_yaml(model, filename, find_by:)
   records = YAML.load_file(Rails.root.join("db/seeds", filename))
   records.each do |attrs|
@@ -19,4 +19,4 @@ def seed_from_yaml(model, filename, find_by:)
   end
 end
 
-seed_from_yaml(Project, "projects.yml", find_by: :title)
+seed_from_yaml(Article, "articles.yml", find_by: :slug)
