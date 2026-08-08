@@ -60,4 +60,10 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+
+  # Rails 8.0's line filtering (railties test_unit/line_filtering.rb) defines
+  # `run(reporter, options = {})`, but minitest 6 calls `run` with three
+  # arguments — any `bin/rails test` run dies with an ArgumentError. Pin to the
+  # 5.x line until the app moves to a Rails version that supports minitest 6.
+  gem "minitest", "~> 5.25"
 end

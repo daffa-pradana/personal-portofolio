@@ -6,17 +6,24 @@
 > Daffa to see project status without reading commit history or CLAUDE.md
 > in full each time.
 
-**Last updated:** 2026-08-02
-**Current focus:** Batch 2 — Articles CMS (Batch 1 is functionally complete)
+**Last updated:** 2026-08-08
+**Current focus:** Batch 2 — Articles CMS (Project→Article migration done; next is Action Text + Active Storage)
 
 ---
 
 ## 🚨 Action Needed First
 
-- [ ] Migrate `Project` → unified `Article` model (see next section). Real
-      seed data (`db/seeds/projects.yml`), Stimulus controllers, and a
-      Railway deployment already depend on the `Project` model/table, so
-      this needs to preserve that rather than a clean-slate rename.
+- [ ] **CI is red on `main` for a reason unrelated to any PR.** `bin/brakeman`
+      exits 3 on the `EOLRails` check — "Support for Rails 8.0.4 ends on
+      2026-10-07" — which started firing between 2026-08-02 (last green run)
+      and 2026-08-08 as the 60-days-to-EOL threshold was crossed. Verified by
+      running brakeman against a pristine `main` worktree: same warning, same
+      exit 3. This blocks every PR until resolved. Options, for Daffa to pick:
+      merge Dependabot PR #7 (rails 8.0.4 → 8.1.3), or add a brakeman ignore
+      for `EOLRails`. Deliberately **not** bundled into the migration PR.
+- [x] ~~Migrate `Project` → unified `Article` model~~ — done 2026-08-08 on
+      branch `feat/project-to-article-migration`. Table renamed in place with
+      data preserved; rollback path tested both directions.
 - [x] ~~Sync local ↔ remote~~ — verified 2026-08-02, local and `origin/main`
       both at `e712372`, no drift. (Earlier note in this file suggesting
       unpushed commits was incorrect — the confusion came from a stale,
@@ -25,20 +32,33 @@
 
 ---
 
-## ⚠️ Known Drift / TODO Before Batch 2
+## ✅ Resolved Drift (was: TODO Before Batch 2)
 
-- [ ] `app/models/project.rb` + `db/migrate/..._create_projects.rb` predate
-      the Project→Article unification decision (see CLAUDE.md Database
-      Schema section). Plan: write a migration that renames the `projects`
-      table to `articles`, adds the new columns (`article_type`, `status`,
-      `slug`, `subtitle`, `published_at`, `reading_time`, `button_label`,
-      `button_url`), and backfills `article_type: case_study` +
-      `status: published` for existing rows — rather than dropping data,
-      since there's a live deployment with real seeded projects.
-  - [ ] Update `db/seeds/projects.yml` → rename/restructure as part of the
-        Article seed convention, or keep as-is if the migration approach
-        preserves compatibility — confirm with Daffa before deciding
-  - [ ] Update any views/partials referencing `Project` to reference `Article`
+- [x] `app/models/project.rb` + the `projects` table migrated to `Article`.
+      `rename_table :projects, :articles`, new columns added, existing rows
+      backfilled as `article_type: case_study` / `status: published` with
+      `published_at` from `created_at`. No data dropped.
+  - [x] `db/seeds/projects.yml` → `db/seeds/articles.yml`, restructured to the
+        Article schema. Now matched on `find_by: :slug` (stable natural key)
+        rather than `:title`. Idempotency re-verified.
+  - [x] `pages_controller.rb` and `_projects.html.erb` now reference `Article`.
+
+### Decisions made during the migration
+
+- **`description` → `subtitle`**, **`live_url` → `button_url`**. `source_code_url`
+  was dropped: it has no equivalent in the CLAUDE.md Article schema and was
+  `nil` on every existing row.
+- **`button_label` is now data, not view logic.** The partial used to hardcode
+  `scroll_link ? "Try Here!" : "Product Page"`; the migration backfills exactly
+  that rule into the column, so rendered output is unchanged.
+- **`default_scope { order(:position) }` was dropped** from the model. It was on
+  `Project` and would have silently ordered the future articles index by
+  `position` instead of `published_at`. Callers now order explicitly, matching
+  the canonical `Article.case_study.published.order(:position).limit(3)`.
+- **minitest pinned to `~> 5.25`.** Rails 8.0's `line_filtering.rb` defines
+  `run(reporter, options = {})` but minitest 6 calls `run` with three args, so
+  *any* `bin/rails test` died with `ArgumentError`. Latent until now because the
+  repo had zero tests.
 
 ---
 
@@ -61,9 +81,12 @@
 
 ## Batch 2: Articles CMS (Blog + Case Studies, Unified) — Next Up
 
-- [ ] Resolve Project→Article migration (see Known Drift above) — do this first, not alongside new Article features
-- [ ] Extend migrated `Article` model with remaining fields not yet present (article_type, status, slug, etc. — see above)
-- [ ] Action Text + Active Storage set up
+- [x] Resolve Project→Article migration (see Resolved Drift above)
+- [x] Extend migrated `Article` model with remaining fields (article_type, status,
+      slug, subtitle, published_at, reading_time, button_label, button_url)
+- [ ] Action Text + Active Storage set up — adds `body` (rich text) and
+      `cover_image`. The `reading_time` column exists but stays `nil` until
+      `body` does, since it's computed from body word count (~200 wpm)
 - [ ] `bin/rails generate authentication` run for admin
 - [ ] Admin namespace: Article CRUD (type selector, Trix editor)
 - [ ] `_card.html.erb` partial with stretched-link pattern (shared: landing
@@ -115,6 +138,25 @@
 ## Session Log
 
 Brief notes per work session — what got done, what decisions were made, what's blocked.
+
+### 2026-08-08
+- Confirmed local `main` == `origin/main` at `61be550`; no drift, nothing to pull.
+- Confirmed no pending migrations before starting (only `CreateProjects`, applied).
+- Deleted-branch check: `backup/local-main-2026-07-05` holds no unmerged work —
+  its 4 commits are pre-squash duplicates of what's on `main`, and it is *missing*
+  `PROGRESS.md`, `docs/design/`, `CONTRIBUTING.md`, `.githooks/`. Safe to delete.
+- Shipped the Project→Article migration on `feat/project-to-article-migration`
+  (see Resolved Drift above for the decisions). Verified: migration up, rollback
+  down (data restored), up again, seeds idempotent across two runs, 12 model tests
+  green, rubocop clean, landing page renders byte-equivalent output.
+- **Blocker found:** brakeman `EOLRails` now fails CI on `main` itself. See
+  Action Needed First.
+- 11 open Dependabot PRs, oldest from 2026-03-12. Three are non-trivial:
+  #7 rails 8.0.4→8.1.3, #23 puma 7→8, #22 solid_cable 3→4. Suggested handling
+  them in a dedicated pass *after* the migration lands, not alongside it —
+  except #7 may get pulled forward to unblock CI.
+- `CONTRIBUTING.md` still says "Deployment is currently paused until 25 July 2026",
+  which is now past. Needs a one-line cleanup.
 
 ### 2026-08-02
 - Finalized CLAUDE.md: unified Project → Article model with article_type enum

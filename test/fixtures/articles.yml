@@ -1,0 +1,43 @@
+# article_type / status are written as raw enum integers because fixtures are
+# inserted directly, bypassing the model. 0 = blog/draft, 1 = case_study/published.
+
+jira_integration:
+  title: "H5 – Jira Project Integration"
+  slug: "h5-jira-project-integration"
+  subtitle: "Sync OKR tasks with Jira issues from inside Happy5."
+  article_type: 1
+  status: 1
+  published_at: <%= 3.days.ago.to_fs(:db) %>
+  tags: ["Ruby on Rails", "Jira API"]
+  button_label: "Product Page"
+  button_url: "https://www.happy5.co/product/project-management-tracker"
+  position: 1
+
+goal_custom_order:
+  title: "H5 – Goal Custom Order"
+  slug: "h5-goal-custom-order"
+  subtitle: "Drag-to-reorder for OKR goals, with the N+1s removed."
+  article_type: 1
+  status: 1
+  published_at: <%= 2.days.ago.to_fs(:db) %>
+  tags: ["Ruby on Rails", "PostgreSQL"]
+  position: 2
+
+unpublished_case_study:
+  title: "Draft Case Study"
+  slug: "draft-case-study"
+  subtitle: "Not ready for the landing page yet."
+  article_type: 1
+  status: 0
+  tags: []
+  position: 4
+
+published_blog_post:
+  title: "Why I Rebuilt My Portfolio in Rails"
+  slug: "why-i-rebuilt-my-portfolio-in-rails"
+  subtitle: "Trading a Vue SPA for Hotwire."
+  article_type: 0
+  status: 1
+  published_at: <%= 1.day.ago.to_fs(:db) %>
+  tags: ["Ruby on Rails", "Hotwire"]
+  position: 3
