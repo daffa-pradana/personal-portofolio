@@ -1,0 +1,41 @@
+- title: "H5 – Jira Project Integration"
+  description: >
+    Built a seamless integration between Happy5 and Jira, enabling teams to sync OKR tasks
+    with Jira issues. Reduced context-switching and improved project tracking adoption
+    across enterprise clients.
+  tags:
+    - "Ruby on Rails"
+    - "REST API"
+    - "Jira API"
+    - "Sidekiq"
+    - "PostgreSQL"
+  live_url: "https://www.happy5.co/product/project-management-tracker"
+  source_code_url: ~
+  position: 1
+
+- title: "H5 – Goal Custom Order"
+  description: >
+    Designed and implemented a drag-to-reorder feature for OKR goals, allowing users to
+    prioritize their objectives. Eliminated N+1 queries in the reordering pipeline and
+    cut response time by 85%.
+  tags:
+    - "Ruby on Rails"
+    - "PostgreSQL"
+    - "Sidekiq"
+  live_url: ~
+  source_code_url: ~
+  position: 2
+
+- title: "RAG – AI Chatbot"
+  description: >
+    Built a Retrieval-Augmented Generation chatbot on top of a personal knowledge base
+    using Groq API (Llama 3.3 70B). Deployed as a portfolio feature with session-based
+    rate limiting and Turbo Streams.
+  tags:
+    - "Ruby on Rails"
+    - "Groq API"
+    - "Hotwire"
+    - "LLM"
+  live_url: "#chat"
+  source_code_url: ~
+  position: 3
