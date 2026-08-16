@@ -6,8 +6,9 @@
 > Daffa to see project status without reading commit history or CLAUDE.md
 > in full each time.
 
-**Last updated:** 2026-08-08
-**Current focus:** Batch 2 — Articles CMS (migration + Action Text/Active Storage done; next is the auth generator, then admin CRUD)
+**Last updated:** 2026-08-16
+**Current focus:** Batch 2 — Articles CMS. Auth generator done (PR #32); next up
+is the admin namespace (`Admin::BaseController` + Article CRUD with Trix).
 
 ---
 
@@ -206,6 +207,47 @@ not as a side effect of a version bump.
 ## Session Log
 
 Brief notes per work session — what got done, what decisions were made, what's blocked.
+
+### 2026-08-16 — Dependabot housekeeping sweep
+
+- **Found `main` itself was newly broken** before touching any Dependabot PR:
+  Brakeman 8.0.6 released today, `bin/brakeman` hardcodes `--ensure-latest`
+  (Rails 8 default), so `scan_ruby` started failing on every branch including
+  `main`. Same failure shape as PR #30's `EOLRails` issue, different trigger
+  (plain version staleness, not the EOL-date check). Fixed via PR #34
+  (brakeman 8.0.5 → 8.0.6, 0 warnings, rubocop clean, 51 tests green) —
+  merged first since nothing else could pass CI without it.
+- Closed **#7** (`rails 8.0.4 → 8.1.3`) as superseded — PR #30 already shipped
+  a newer patch (8.1.3.1) back in August.
+- Merged 9 of the remaining 10 open Dependabot PRs after syncing each against
+  the fixed `main`: **#1** upload-artifact, **#2** actions/checkout, **#4**
+  kamal, **#5** solid_queue, **#12** propshaft, **#18** selenium-webdriver,
+  **#20** thruster, **#22** solid_cable (3→4), **#23** puma (7→8), **#24**
+  bootsnap.
+  - **#22 and #23** are major-version bumps — checked their release notes
+    before merging rather than trusting CI alone: solid_cable 4.0's only
+    breaking change is dropping Ruby 3.1/3.2 support (we're on 3.4.7, so
+    n/a); no config/schema changes. Puma 7→8 passed the full suite with no
+    behavior changes surfaced.
+  - **#12, #22, #24 had real `Gemfile.lock` conflicts** against `main`
+    (textual clashes from the brakeman/ruby/rails bumps earlier this month).
+    Dependabot's own rebase attempt didn't fully resolve them. Fixed by hand:
+    reset each branch's lockfile to `main`'s, then `bundle update <gem>
+    --conservative` so only the target gem (and its direct deps) moved —
+    verified via `git diff` that no unrelated gem shifted before committing.
+  - **#2 (actions/checkout) needed a plain `git merge` + `git push` over SSH**
+    instead of the GitHub API's update-branch endpoint — `gh`'s OAuth token
+    lacks the `workflow` scope required to update a PR that touches
+    `.github/workflows/*` via the API. Not an issue for direct git pushes.
+  - Branch protection (`strict` mode) meant every merge shifted `main` and
+    invalidated the "behind" state of whichever PRs hadn't merged yet —
+    each one needed a fresh sync immediately before its own merge, not once
+    up front.
+- Fixed a stale line in `CONTRIBUTING.md`: "paused until 25 July 2026" → the
+  date passed and the deployment pause is indefinite (part of PR #34).
+- **End state:** 0 open PRs, `main` green (0 Brakeman warnings, 0 rubocop
+  offenses, 51/51 tests), fully verified locally after the final merge, not
+  just trusted from individual PR CI runs.
 
 ### 2026-08-08 (later still — SiteSetting + dynamic CV button)
 - **The résumé PDF is deliberately NOT in this repo, and must never be.** It's a
