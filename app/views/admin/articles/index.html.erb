@@ -1,0 +1,46 @@
+<% content_for :title, "Articles — Admin" %>
+
+<div class="flex items-center justify-between">
+  <h1 class="font-bold text-3xl text-gray-900">Articles</h1>
+  <%= link_to "New Article", new_admin_article_path, class: "rounded-md px-3.5 py-2.5 bg-gray-900 hover:bg-gray-700 text-white text-sm font-medium" %>
+</div>
+
+<div class="mt-8 border border-gray-200 rounded-xl bg-white overflow-x-auto">
+  <table class="w-full text-sm text-left">
+    <thead class="border-b border-gray-200 text-gray-500">
+      <tr>
+        <th class="px-4 py-3 font-medium">Title</th>
+        <th class="px-4 py-3 font-medium">Type</th>
+        <th class="px-4 py-3 font-medium">Status</th>
+        <th class="px-4 py-3 font-medium">Position</th>
+        <th class="px-4 py-3 font-medium"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      <% @articles.each do |article| %>
+        <tr>
+          <td class="px-4 py-3 font-medium text-gray-900"><%= article.title %></td>
+          <td class="px-4 py-3 text-gray-600"><%= article.article_type.titleize %></td>
+          <td class="px-4 py-3">
+            <span class="px-2 py-1 rounded-full text-xs font-medium <%= article.published? ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-600" %>">
+              <%= article.status.titleize %>
+            </span>
+          </td>
+          <td class="px-4 py-3 text-gray-600"><%= article.position %></td>
+          <td class="px-4 py-3 text-right whitespace-nowrap">
+            <%= link_to "Edit", edit_admin_article_path(article), class: "text-gray-900 underline hover:no-underline" %>
+            <%= button_to "Delete", admin_article_path(article), method: :delete,
+                  form: { data: { turbo_confirm: "Delete \"#{article.title}\"? This can't be undone." } },
+                  class: "ml-4 text-red-600 underline hover:no-underline bg-transparent cursor-pointer inline" %>
+          </td>
+        </tr>
+      <% end %>
+
+      <% if @articles.empty? %>
+        <tr>
+          <td colspan="5" class="px-4 py-6 text-center text-gray-500">No articles yet.</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

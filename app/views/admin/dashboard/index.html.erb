@@ -1,0 +1,24 @@
+<% content_for :title, "Dashboard — Admin" %>
+
+<h1 class="font-bold text-3xl text-gray-900">Dashboard</h1>
+
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
+  <div class="border border-gray-200 rounded-xl bg-white p-6">
+    <p class="text-sm text-gray-500">Total articles</p>
+    <p class="text-3xl font-bold text-gray-900 mt-1"><%= @article_count %></p>
+  </div>
+
+  <div class="border border-gray-200 rounded-xl bg-white p-6">
+    <p class="text-sm text-gray-500">Published</p>
+    <p class="text-3xl font-bold text-gray-900 mt-1"><%= @published_count %></p>
+  </div>
+
+  <div class="border border-gray-200 rounded-xl bg-white p-6">
+    <p class="text-sm text-gray-500">Drafts</p>
+    <p class="text-3xl font-bold text-gray-900 mt-1"><%= @draft_count %></p>
+  </div>
+</div>
+
+<div class="mt-8">
+  <%= link_to "Manage articles →", admin_articles_path, class: "text-sm font-medium text-gray-900 underline hover:no-underline" %>
+</div>
