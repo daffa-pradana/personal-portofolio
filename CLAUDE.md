@@ -1,7 +1,7 @@
 # CLAUDE.md — Daffa Pradana Personal Portfolio Website
 
 > This file provides context for Claude CLI / Claude Code when working on this project.
-> Last updated: 2026-03-10
+> Last updated: 2026-08-02 (design reference files added)
 
 ## Project Overview
 
@@ -29,6 +29,13 @@ Personal portfolio website for **Daffa Pradana**, a Seasoned Backend Engineer sp
 
 ## Project Structure Conventions
 
+### Seed Data Convention
+- **Never hardcode seed data inline in `db/seeds.rb`**
+- All seed data lives in YAML files under `db/seeds/<model_name>.yml`
+- `seeds.rb` uses the `seed_from_yaml` helper to load and upsert records
+- Example: adding a new model's seed data → create `db/seeds/articles.yml`, then add `seed_from_yaml(Article, "articles.yml", find_by: :title)` to `seeds.rb`
+- YAML `~` means `nil`; use `find_or_create_by!` so seeds are always idempotent
+
 ### Rails Conventions (follow strictly)
 - Follow Rails 8 conventions and defaults wherever possible
 - Use `params.expect()` (Rails 8 style) instead of `params.require().permit()`
@@ -43,17 +50,15 @@ Personal portfolio website for **Daffa Pradana**, a Seasoned Backend Engineer sp
 app/
 ├── controllers/
 │   ├── pages_controller.rb          # Landing page
-│   ├── articles_controller.rb       # Public blog views
+│   ├── articles_controller.rb       # Public article views (blog + case studies)
 │   ├── chats_controller.rb          # AI chatbot endpoint
 │   └── admin/
 │       ├── base_controller.rb       # Admin auth check
-│       ├── articles_controller.rb   # Blog CRUD
-│       ├── projects_controller.rb   # Projects CRUD
+│       ├── articles_controller.rb   # Article CRUD (blog + case studies, one model)
 │       └── knowledge_entries_controller.rb  # RAG knowledge CRUD
 ├── models/
 │   ├── user.rb                      # Admin user (Rails 8 auth)
-│   ├── article.rb                   # Blog posts
-│   ├── project.rb                   # Portfolio projects
+│   ├── article.rb                   # Unified model: blog posts AND project case studies
 │   ├── knowledge_entry.rb           # RAG knowledge base
 │   └── site_setting.rb              # Dynamic site content (key-value)
 ├── services/
@@ -66,8 +71,10 @@ app/
 │   ├── pages/
 │   │   └── home.html.erb            # Landing page
 │   ├── articles/
-│   │   ├── index.html.erb           # Blog listing
-│   │   └── show.html.erb            # Article detail (Medium-like)
+│   │   ├── index.html.erb           # Article listing (filterable: All/Blog/Case Studies)
+│   │   ├── show.html.erb            # Article detail (Medium-like)
+│   │   └── _card.html.erb           # Reusable card (stretched-link pattern, used on
+│   │                                 # landing page "My Latest Projects" AND articles index)
 │   ├── chats/
 │   │   └── _message.html.erb        # Chat message partial
 │   └── admin/
@@ -80,9 +87,9 @@ app/
 ```
 
 ### Naming Conventions
-- Models: singular (Article, Project, KnowledgeEntry)
-- Controllers: plural (ArticlesController, ProjectsController)
-- Database tables: plural snake_case (articles, projects, knowledge_entries)
+- Models: singular (Article, KnowledgeEntry)
+- Controllers: plural (ArticlesController)
+- Database tables: plural snake_case (articles, knowledge_entries)
 - Stimulus controllers: kebab-case filenames (chat_controller.js → data-controller="chat")
 - CSS: Tailwind utility classes only, no custom CSS files unless absolutely necessary
 - Views: use partials liberally with `_` prefix
@@ -93,7 +100,8 @@ app/
 Rails.application.routes.draw do
   root "pages#home"
 
-  resources :articles, only: [:index, :show]
+  # :slug used as the param (not :id) — see Article model note below
+  resources :articles, only: [:index, :show], param: :slug
 
   # AI Chat endpoint
   post "/chat", to: "chats#create"
@@ -102,7 +110,6 @@ Rails.application.routes.draw do
   namespace :admin do
     root "dashboard#index"
     resources :articles
-    resources :projects
     resources :knowledge_entries
     resources :site_settings, only: [:index, :update]
   end
@@ -116,28 +123,41 @@ end
 ## Database Schema
 
 ### articles
+**Unified model** — a "project case study" IS an Article. There is no separate
+Project model. This was a deliberate decision: project cards on the landing
+page and blog posts are the same underlying content type, just filtered by
+`article_type`. One CRUD, one editor, one slug system for everything Daffa writes.
+
 ```
 title:string (not null)
 subtitle:string
 slug:string (unique index, not null)
-status:integer (default: 0, enum: draft/published)
+article_type:integer (default: 0, enum: blog: 0, case_study: 1)
+status:integer (default: 0, enum: draft: 0, published: 1)
 published_at:datetime
 reading_time:integer (minutes)
-tags:string[] (PostgreSQL array)
+tags:string[] (PostgreSQL array) — static/non-clickable pills, shown on card + show page
+position:integer (nullable — manual curation order; used to pick which 3
+                   case_study articles feature in landing page "My Latest
+                   Projects" section, NOT necessarily the most recent 3)
+button_label:string (nullable) — e.g. "Product Page", "Try Here!"; blank/nil = no button
+button_url:string (nullable) — external URL (e.g. "https://happy5.co")
+                                OR internal anchor (e.g. "#chat-with-ai") —
+                                anchors reuse the exact same Stimulus smooth-scroll
+                                behavior as the navbar, no special-casing needed
 cover_image → Active Storage attachment
 body → Action Text rich text
 ```
 
-### projects
-```
-title:string (not null)
-description:text
-tags:string[] (PostgreSQL array)
-source_code_url:string
-live_url:string
-position:integer (for ordering)
-image → Active Storage attachment
-```
+**Card click behavior (landing page + articles index):** the entire card is
+clickable and navigates to the article's show page (`/articles/:slug`). This
+is implemented with the "stretched link" CSS pattern (title `<a>` gets an
+`::after` pseudo-element with `position: absolute; inset: 0;`), NOT nested
+`<a>` tags (invalid HTML). The optional `button_label`/`button_url` CTA sits
+on top with a higher `z-index` and its own independent `href`, so it
+intercepts clicks before they reach the stretched overlay and can navigate
+elsewhere (external URL) or smooth-scroll in-page (anchor), independent of
+the card's own click-through to the article.
 
 ### knowledge_entries
 ```
@@ -167,10 +187,14 @@ value:text
 - Mobile-first responsive design
 
 ### Landing Page Sections (single page, scroll-based)
-1. **Navbar** — Fixed top. Logo "Daffa Pradana" left, nav links right (About, Projects, AI Chat, Contacts). Hamburger on mobile.
+1. **Navbar** — Fixed top. Logo "Daffa Pradana" left, nav links right: About, Projects, **Articles**, AI Chat, Contacts. Hamburger on mobile.
+   - "About", "Projects", "AI Chat", "Contacts" → smooth-scroll anchors within the landing page (same page)
+   - "Articles" → real navigation to `/articles` (full index of all published Articles, both types)
 2. **Hero** — Profile photo (rounded), "Hello, I'm Daffa Pradana", "Seasoned Backend Engineer", two CTA buttons (Download CV, Custom).
 3. **About Me** — "Get to know" subtitle, "About Me" heading, paragraph about professional background.
-4. **Projects** — "What I've been working on" subtitle, "My Latest Projects" heading, card grid (image, title, tag pills).
+4. **Projects** — "What I've been working on" subtitle, "My Latest Projects" heading. Card grid showing
+   `Article.case_study.published.order(:position).limit(3)` — see Article schema above for card click
+   behavior and optional CTA button. Tags shown as static pills (non-clickable).
 5. **AI Chat** — "Know More About Me" subtitle, "Chat with AI" heading, left side: suggested questions, right side: chat interface with message bubbles.
 6. **Contacts** — "My Contacts" heading, contact pills (email, LinkedIn, GitHub).
 7. **Footer** — Nav links repeated, "Forged with passion in Depok @daffa-pradana".
@@ -241,9 +265,16 @@ Here is everything you know about Daffa:
 - Messages styled as bubbles (user right-aligned, AI left-aligned)
 - Chat implemented with Turbo Streams for real-time feel
 
-## Blog (CMS) Specifications
+## Articles (CMS) Specifications — Blog + Case Studies, Unified
 
-### Medium-like Article Design
+### Articles Index Page (`/articles`)
+- Medium-style card list of ALL published articles (both `blog` and `case_study` types)
+- Filter tabs at top: **All / Blog / Case Studies** — implemented as a Turbo Frame,
+  no full page reload on filter change
+- Each card uses the same `_card.html.erb` partial as the landing page's
+  "My Latest Projects" section (see Article schema for click behavior)
+
+### Medium-like Article Show Page Design
 - Max content width: 680px (centered)
 - Title: Large (32-40px), bold, sans-serif
 - Subtitle: Medium (20-24px), gray, regular weight
@@ -252,14 +283,20 @@ Here is everything you know about Daffa:
 - Images: Full-width within content area, with optional captions
 - Reading time shown at top (calculated from word count, ~200 words/min)
 - Published date shown at top
-- Tags shown as pills below title
+- Tags shown as pills below title — static, non-clickable (descriptive only)
+- If `article_type == case_study` and `button_label`/`button_url` present,
+  render that CTA near the top of the article too (not just on the card)
 
 ### Admin Dashboard
 - Simple, functional UI (does not need to be fancy)
-- Article CRUD with Trix rich text editor
+- Single Article CRUD (covers both blog posts and case studies) with Trix rich text editor
+- `article_type` selector (Blog / Case Study) in the form
+- `button_label` + `button_url` optional fields in the form (case studies mainly, but
+  available for any article)
 - Draft/Published toggle
 - Image upload for cover images
-- Project CRUD with drag-to-reorder (position field)
+- Drag-to-reorder (`position` field) — relevant for curating which case studies
+  surface in the landing page's "My Latest Projects" section
 - Knowledge entry CRUD for RAG content
 - Site settings editor (key-value pairs)
 
@@ -305,25 +342,46 @@ production:
 git push origin main  # GitHub Actions runs tests → Railway auto-deploys
 ```
 
+## Design Reference Files
+
+Exported Claude Design output lives in `docs/design/`. Before implementing
+any view, view the corresponding exported HTML file as the source of truth
+for exact spacing, colors, and structure — translate it into Tailwind
+classes + ERB, don't approximate from memory or the prose description alone.
+If a design file is missing for a section not yet exported, fall back to the
+Design Specifications section above and confirm with Daffa before inventing
+new spacing/structure decisions.
+
+- `docs/design/exports/landing_page.html` — hero, about, projects, AI chat, contacts sections
+- `docs/design/exports/articles_index.html` — articles listing with All/Blog/Case Studies filter
+- `docs/design/exports/article_show.html` — Medium-style article detail page
+- `docs/design/screenshots/` — PNG screenshots of the same pages, for quick visual reference
+
 ## Development Batches
 
 ### Batch 1: Project Scaffolding & Landing Page
-1. `rails new daffa-portfolio --database=postgresql --css=tailwind`
+1. `rails new personal-portofolio --database=postgresql --css=tailwind --skip-jbuilder` ✅ done
 2. Configure Solid Stack on single PG
 3. Build PagesController#home
 4. Build all landing page sections with Tailwind (responsive)
-5. Add smooth scroll navigation with Stimulus
-6. Seed initial data (projects, about text)
+5. Add smooth scroll navigation with Stimulus (reused by both navbar AND
+   optional article `button_url` anchors — build this once, generically)
+6. Seed initial Article data (a few `case_study` entries for "My Latest
+   Projects" section, about text)
 7. Deploy to Railway
 
-### Batch 2: Blog CMS
-1. Generate Article model + migrations
+### Batch 2: Articles CMS (Blog + Case Studies, unified)
+1. Generate unified Article model + migrations (see Database Schema above)
 2. Set up Action Text + Active Storage
 3. Run `bin/rails generate authentication` for admin
-4. Build admin namespace with article CRUD
-5. Build public article index + show pages (Medium-like typography)
-6. Add Turbo Frames for article filtering
-7. SEO meta tags
+4. Build admin namespace with single Article CRUD (type selector: Blog / Case Study)
+5. Build `_card.html.erb` partial with stretched-link pattern (shared between
+   landing page "My Latest Projects" and articles index)
+6. Build public articles index (`/articles`, filter tabs: All/Blog/Case Studies)
+   + show pages (Medium-like typography)
+7. Add Turbo Frames for article type filtering
+8. Add navbar "Articles" link → `/articles`
+9. SEO meta tags
 
 ### Batch 3: RAG AI Chatbot
 1. Generate KnowledgeEntry model
@@ -355,7 +413,9 @@ bin/rails test                      # Run tests
 bin/rails test:system               # Run system tests
 
 # Generators
-bin/rails generate model Article title:string slug:string status:integer
+bin/rails generate model Article title:string subtitle:string slug:string \
+  article_type:integer status:integer published_at:datetime reading_time:integer \
+  tags:string position:integer button_label:string button_url:string
 bin/rails generate controller Admin::Articles
 bin/rails generate stimulus chat
 bin/rails generate authentication
@@ -380,5 +440,10 @@ railway run bin/rails console       # Remote console
 - **No custom webpack/esbuild** — use Importmap
 - **Single PostgreSQL** — app data + Solid Stack all in one database
 - **Groq API** — OpenAI-compatible format, model: `llama-3.3-70b-versatile`
+- **No separate Project model** — project case studies are `Article` records with
+  `article_type: case_study`. Do not create a `Project` model/controller/table.
+- **Card stretched-link pattern** — required for project/article cards where the
+  whole card AND an independent optional button must both be clickable. See
+  Article schema section for the CSS approach.
 - When the Groq rate limit or session question limit is hit, respond with a denial message and redirect to contacts — never show raw errors to visitors
 - Keep the design minimal, clean, black-and-white per the Figma reference

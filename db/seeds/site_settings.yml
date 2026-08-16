@@ -1,0 +1,18 @@
+# Site settings — dynamic, human-editable site content as key/value pairs.
+#
+# Seeding these only CREATES missing keys; it never overwrites a value that has
+# already been set (see `update_existing: false` in db/seeds.rb). So this file
+# is a registry of which keys exist and what they default to, not a source of
+# truth for their current values.
+#
+# Values are intentionally blank. Set them through the admin UI, or from the
+# console:
+#
+#   SiteSetting[:cv_url] = "https://drive.google.com/..."
+
+# URL the hero's "Download CV" button points at. Left blank on purpose: the
+# résumé is a PII document and must never be committed to this public repo, so
+# it's hosted externally and referenced by URL. The button renders only when
+# this is set — a blank value means no button, rather than a dead link.
+- key: cv_url
+  value: ~
