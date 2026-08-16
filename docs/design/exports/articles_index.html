@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Design export — Articles index · Daffa Pradana</title>
+  <style>
+  *,*::before,*::after{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:#fff;color:#0f172a;-webkit-font-smoothing:antialiased;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",ui-sans-serif,system-ui,sans-serif}
+  a{color:#0f172a}
+
+  /* --- the whole card is one link ------------------------------------------
+     Structure: [data-card] is position:relative and contains a stretched
+     <a data-stretch> (absolute inset-0, z-1). Hover lifts the card, underlines
+     the title and reveals the destination chip.
+     Tailwind: group + group-hover:-translate-y-1 group-hover:shadow-lg …      */
+  [data-card]:hover{transform:translateY(-4px);box-shadow:0 14px 30px -14px rgba(15,23,42,.28);border-color:#cbd5e1}
+  [data-card]:hover [data-role="title"]{text-decoration-color:#0f172a}
+  [data-card]:hover [data-role="arrow"]{opacity:1;transform:translateY(0)}
+
+  /* --- the card's own button is a separate target --------------------------
+     While the pointer is on [data-btn] the card RECEDES (lift drops to 1px,
+     chip fades to 25%, underline clears) and the button takes over.
+     Tailwind: has-[[data-btn]:hover]:… (v3.4+) or a 3-line Stimulus fallback. */
+  [data-card]:has([data-btn]:hover){transform:translateY(-1px);box-shadow:0 4px 12px -6px rgba(15,23,42,.16);border-color:#e2e8f0}
+  [data-card]:has([data-btn]:hover) [data-role="title"]{text-decoration-color:transparent}
+  [data-card]:has([data-btn]:hover) [data-role="arrow"]{opacity:.25}
+
+  /* --- buttons: black pill is always the primary --------------------------- */
+  [data-btn],[data-cta]{background:#0f172a}
+  [data-btn]:hover,[data-cta]:hover{background:#000;transform:translateY(-1px);box-shadow:0 0 0 4px rgba(15,23,42,.13)}
+  [data-cta-ghost]:hover{border-color:#0f172a}
+  [data-nav]:hover{color:#0f172a}
+  [data-suggest]:hover,[data-contact]:hover{border-color:#cbd5e1;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+
+  /* --- keyboard: the stretched link and the button focus independently ----- */
+  a:focus-visible,button:focus-visible{outline:2px solid #0f172a;outline-offset:3px}
+  </style>
+</head>
+<body>
+<!--
+  ==========================================================================
+  DESIGN EXPORT · ARTICLES INDEX
+  Generated from the Claude design canvas — treat as the source of truth for
+  spacing, colour and structure. Do not hand-edit; re-export instead.
+  Implements: app/views/articles/index.html.erb
+  Sections: header · page head · filter tabs (All / Blog / Case Studies) · card grid · footer
+
+  HOW TO READ IT
+    Everything is inline-styled on purpose: every value you need is on the
+    element itself. Interaction states are the only thing in <style>, so the
+    hover/focus behaviour is described in exactly one place (bottom of head).
+
+  TOKEN MAP  (hex → Tailwind)
+    #ffffff  white          page background
+    #f8fafc  slate-50       alternating section tint, code block
+    #f1f5f9  slate-100      tag pills, chat bubble
+    #e2e8f0  slate-200      all 1px borders
+    #cbd5e1  slate-300      card hover border, ghost-button border
+    #94a3b8  slate-400      eyebrows, meta, placeholders
+    #64748b  slate-500      nav links, card body copy
+    #475569  slate-600      long body copy, pill text
+    #1f2937  gray-800       article prose
+    #0f172a  slate-900      ink, filled buttons, active nav
+
+  SCALE
+    container        max-w-[1152px] mx-auto px-6
+    header           h-16, sticky, bg-white/90 backdrop-blur, border-b
+    section rhythm   py-[88px] (hero py-28)
+    radius           cards rounded-xl(12) · pills rounded-md(6) · buttons rounded-full
+    type             h1 60/44/40 · h2 32 · card title 16 · body 15 · nav 14 · pills 12
+    prose            Source Serif 4 20/1.78 on a 680px measure
+
+  INTERACTION HOOKS
+    [data-card]       card = link. relative; contains the stretched <a>
+    [data-stretch]    absolute inset-0 z-1 — makes the whole card clickable
+                      (real href: ⌘-click and middle-click work, no JS)
+    [data-btn]        the card's own action. relative z-2, sits above the
+                      stretched link, so no stopPropagation is needed
+    [data-role=arrow] destination chip, revealed on card hover
+    [data-role=title] title underline, revealed on card hover
+    tag pills         pointer-events:none — static labels, never filters
+  ========================================================================== -->
+
+<header style="position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid #e2e8f0">
+  <div style="max-width:1152px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between">
+    <a href="landing_page.html" style="font-size:16px;font-weight:700;letter-spacing:-.01em;text-decoration:none;color:#0f172a">Daffa Pradana</a>
+    <nav style="display:flex;align-items:center;gap:32px">
+      <a data-nav href="landing_page.html#about" style="font-size:14px;color:#64748b;text-decoration:none;transition:color .15s ease">About</a>
+      <a data-nav href="landing_page.html#projects" style="font-size:14px;color:#64748b;text-decoration:none;transition:color .15s ease">Projects</a>
+      <a data-nav-active href="#" style="font-size:14px;font-weight:600;color:#0f172a;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:7px;text-decoration-color:#0f172a">Articles</a>
+      <a data-nav href="landing_page.html#ai-chat" style="font-size:14px;color:#64748b;text-decoration:none;transition:color .15s ease">AI Chat</a>
+      <a data-nav href="landing_page.html#contacts" style="font-size:14px;color:#64748b;text-decoration:none;transition:color .15s ease">Contacts</a>
+    </nav>
+  </div>
+</header>
+
+<section data-tabs-scope style="background:#fff">
+  <div style="max-width:1152px;margin:0 auto;padding:72px 24px 96px">
+    <span style="display:block;font-size:12px;font-weight:600;letter-spacing:.2em;color:#94a3b8;margin-bottom:10px">WRITING &amp; CASE STUDIES</span>
+    <h1 style="margin:0 0 12px;font-size:40px;font-weight:700;letter-spacing:-.03em;line-height:1.1;color:#0f172a">Articles</h1>
+    <p style="margin:0 0 32px;font-size:16px;line-height:1.65;color:#64748b;max-width:560px;text-wrap:pretty">Notes from the backend &mdash; and the long version of the projects on the home page.</p>
+
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:32px">
+      <button data-filter="all" style="padding:9px 16px;background:#0f172a;color:#fff;border:1px solid #0f172a;border-radius:999px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .16s ease,color .16s ease,border-color .16s ease">All</button>
+      <button data-filter="blog" style="padding:9px 16px;background:#fff;color:#475569;border:1px solid #e2e8f0;border-radius:999px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .16s ease,color .16s ease,border-color .16s ease">Blog</button>
+      <button data-filter="case" style="padding:9px 16px;background:#fff;color:#475569;border:1px solid #e2e8f0;border-radius:999px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .16s ease,color .16s ease,border-color .16s ease">Case Studies</button>
+    </div>
+
+    <div data-grid style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px">
+
+      <article data-card data-kind="case" style="position:relative;display:flex;flex-direction:column;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 2px rgba(15,23,42,.04);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease">
+        <a data-stretch href="article_show.html" aria-label="Read the case study: H5 – Jira Project Integration" style="position:absolute;inset:0;z-index:1;border-radius:12px"></a>
+        <div style="position:relative;aspect-ratio:16/10;border-radius:12px 12px 0 0;overflow:hidden;background:repeating-linear-gradient(135deg,#eef1f5 0 10px,#e8edf3 10px 20px);display:flex;align-items:center;justify-content:center">
+          <span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.09em;color:#94a3b8">COVER</span>
+          <span data-role="arrow" style="position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:6px;padding:6px 11px;background:rgba(15,23,42,.94);color:#fff;border-radius:999px;font-size:11px;font-weight:600;opacity:0;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease">Read case study &rarr;</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:20px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:.14em;color:#94a3b8">CASE STUDY<span style="color:#e2e8f0;font-weight:400">|</span><span style="font-weight:500;letter-spacing:0;font-size:12px">8 min read &middot; Feb 2026</span></div>
+          <h3 data-role="title" style="margin:0;font-size:16px;font-weight:700;line-height:1.35;color:#0f172a;text-decoration:underline;text-decoration-color:transparent;text-decoration-thickness:2px;text-underline-offset:3px;transition:text-decoration-color .18s ease">H5 &ndash; Jira Project Integration</h3>
+          <p style="margin:0;font-size:14px;line-height:1.6;color:#64748b;text-wrap:pretty">How two-way OKR sync survived rate limits, webhook storms and a 40k-issue backfill.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;pointer-events:none">
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">Ruby on Rails</span>
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">Jira API</span>
+          </div>
+          <div style="display:flex;margin-top:6px">
+            <a data-btn href="https://happy5.co" target="_blank" rel="noopener" style="position:relative;z-index:2;display:inline-flex;align-items:center;gap:6px;padding:9px 15px;color:#fff;border-radius:999px;font-size:13px;font-weight:600;text-decoration:none;transition:background .16s ease,transform .16s ease,box-shadow .16s ease">Product Page <span style="font-size:11px;opacity:.8">&#8599;</span></a>
+          </div>
+        </div>
+      </article>
+
+      <article data-card data-kind="case" style="position:relative;display:flex;flex-direction:column;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 2px rgba(15,23,42,.04);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease">
+        <a data-stretch href="article_show.html" aria-label="Read the case study: RAG – AI Chatbot" style="position:absolute;inset:0;z-index:1;border-radius:12px"></a>
+        <div style="position:relative;aspect-ratio:16/10;border-radius:12px 12px 0 0;overflow:hidden;background:repeating-linear-gradient(135deg,#eef1f5 0 10px,#e8edf3 10px 20px);display:flex;align-items:center;justify-content:center">
+          <span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.09em;color:#94a3b8">COVER</span>
+          <span data-role="arrow" style="position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:6px;padding:6px 11px;background:rgba(15,23,42,.94);color:#fff;border-radius:999px;font-size:11px;font-weight:600;opacity:0;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease">Read case study &rarr;</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:20px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:.14em;color:#94a3b8">CASE STUDY<span style="color:#e2e8f0;font-weight:400">|</span><span style="font-weight:500;letter-spacing:0;font-size:12px">11 min read &middot; Jan 2026</span></div>
+          <h3 data-role="title" style="margin:0;font-size:16px;font-weight:700;line-height:1.35;color:#0f172a;text-decoration:underline;text-decoration-color:transparent;text-decoration-thickness:2px;text-underline-offset:3px;transition:text-decoration-color .18s ease">RAG &ndash; AI Chatbot</h3>
+          <p style="margin:0;font-size:14px;line-height:1.6;color:#64748b;text-wrap:pretty">Chunking, embeddings and a Groq-backed answer loop over my own r&eacute;sum&eacute; and repos.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;pointer-events:none">
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">Groq API</span>
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">LLM</span>
+          </div>
+          <div style="display:flex;margin-top:6px">
+            <a data-btn href="landing_page.html#ai-chat" style="position:relative;z-index:2;display:inline-flex;align-items:center;gap:6px;padding:9px 15px;color:#fff;border-radius:999px;font-size:13px;font-weight:600;text-decoration:none;transition:background .16s ease,transform .16s ease,box-shadow .16s ease">Try Here! <span style="font-size:11px;opacity:.8">&darr;</span></a>
+          </div>
+        </div>
+      </article>
+
+      <article data-card data-kind="blog" style="position:relative;display:flex;flex-direction:column;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 2px rgba(15,23,42,.04);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease">
+        <a data-stretch href="article_show.html" aria-label="Read the article: N+1 is a symptom, not the bug" style="position:absolute;inset:0;z-index:1;border-radius:12px"></a>
+        <div style="position:relative;aspect-ratio:16/10;border-radius:12px 12px 0 0;overflow:hidden;background:repeating-linear-gradient(135deg,#eef1f5 0 10px,#e8edf3 10px 20px);display:flex;align-items:center;justify-content:center">
+          <span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.09em;color:#94a3b8">COVER</span>
+          <span data-role="arrow" style="position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:6px;padding:6px 11px;background:rgba(15,23,42,.94);color:#fff;border-radius:999px;font-size:11px;font-weight:600;opacity:0;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease">Read article &rarr;</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:20px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:.14em;color:#94a3b8">BLOG<span style="color:#e2e8f0;font-weight:400">|</span><span style="font-weight:500;letter-spacing:0;font-size:12px">6 min read &middot; Dec 2025</span></div>
+          <h3 data-role="title" style="margin:0;font-size:16px;font-weight:700;line-height:1.35;color:#0f172a;text-decoration:underline;text-decoration-color:transparent;text-decoration-thickness:2px;text-underline-offset:3px;transition:text-decoration-color .18s ease">N+1 is a symptom, not the bug</h3>
+          <p style="margin:0;font-size:14px;line-height:1.6;color:#64748b;text-wrap:pretty">Why I stopped reaching for <code style="font-family:ui-monospace,Menlo,monospace;font-size:13px">includes</code> first and started reading the query plan.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;pointer-events:none">
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">PostgreSQL</span>
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">Performance</span>
+          </div>
+        </div>
+      </article>
+
+      <article data-card data-kind="blog" style="position:relative;display:flex;flex-direction:column;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 2px rgba(15,23,42,.04);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease">
+        <a data-stretch href="article_show.html" aria-label="Read the article: Idempotent Sidekiq jobs, cheaply" style="position:absolute;inset:0;z-index:1;border-radius:12px"></a>
+        <div style="position:relative;aspect-ratio:16/10;border-radius:12px 12px 0 0;overflow:hidden;background:repeating-linear-gradient(135deg,#eef1f5 0 10px,#e8edf3 10px 20px);display:flex;align-items:center;justify-content:center">
+          <span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.09em;color:#94a3b8">COVER</span>
+          <span data-role="arrow" style="position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:6px;padding:6px 11px;background:rgba(15,23,42,.94);color:#fff;border-radius:999px;font-size:11px;font-weight:600;opacity:0;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease">Read article &rarr;</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:20px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:.14em;color:#94a3b8">BLOG<span style="color:#e2e8f0;font-weight:400">|</span><span style="font-weight:500;letter-spacing:0;font-size:12px">7 min read &middot; Nov 2025</span></div>
+          <h3 data-role="title" style="margin:0;font-size:16px;font-weight:700;line-height:1.35;color:#0f172a;text-decoration:underline;text-decoration-color:transparent;text-decoration-thickness:2px;text-underline-offset:3px;transition:text-decoration-color .18s ease">Idempotent Sidekiq jobs, cheaply</h3>
+          <p style="margin:0;font-size:14px;line-height:1.6;color:#64748b;text-wrap:pretty">A Redis key, a database constraint, and the retry that stops being scary.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;pointer-events:none">
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">Sidekiq</span>
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">Redis</span>
+          </div>
+        </div>
+      </article>
+
+      <article data-card data-kind="case" style="position:relative;display:flex;flex-direction:column;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 2px rgba(15,23,42,.04);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease">
+        <a data-stretch href="article_show.html" aria-label="Read the case study: H5 – Goal Custom Order" style="position:absolute;inset:0;z-index:1;border-radius:12px"></a>
+        <div style="position:relative;aspect-ratio:16/10;border-radius:12px 12px 0 0;overflow:hidden;background:repeating-linear-gradient(135deg,#eef1f5 0 10px,#e8edf3 10px 20px);display:flex;align-items:center;justify-content:center">
+          <span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.09em;color:#94a3b8">COVER</span>
+          <span data-role="arrow" style="position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:6px;padding:6px 11px;background:rgba(15,23,42,.94);color:#fff;border-radius:999px;font-size:11px;font-weight:600;opacity:0;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease">Read case study &rarr;</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:20px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:.14em;color:#94a3b8">CASE STUDY<span style="color:#e2e8f0;font-weight:400">|</span><span style="font-weight:500;letter-spacing:0;font-size:12px">9 min read &middot; Oct 2025</span></div>
+          <h3 data-role="title" style="margin:0;font-size:16px;font-weight:700;line-height:1.35;color:#0f172a;text-decoration:underline;text-decoration-color:transparent;text-decoration-thickness:2px;text-underline-offset:3px;transition:text-decoration-color .18s ease">H5 &ndash; Goal Custom Order</h3>
+          <p style="margin:0;font-size:14px;line-height:1.6;color:#64748b;text-wrap:pretty">Drag-to-reorder for OKR goals without a single full-table rewrite.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;pointer-events:none">
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">Hotwire</span>
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">PostgreSQL</span>
+          </div>
+        </div>
+      </article>
+
+      <article data-card data-kind="blog" style="position:relative;display:flex;flex-direction:column;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 2px rgba(15,23,42,.04);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease">
+        <a data-stretch href="article_show.html" aria-label="Read the article: Four years of backend, in numbers" style="position:absolute;inset:0;z-index:1;border-radius:12px"></a>
+        <div style="position:relative;aspect-ratio:16/10;border-radius:12px 12px 0 0;overflow:hidden;background:repeating-linear-gradient(135deg,#eef1f5 0 10px,#e8edf3 10px 20px);display:flex;align-items:center;justify-content:center">
+          <span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.09em;color:#94a3b8">COVER</span>
+          <span data-role="arrow" style="position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:6px;padding:6px 11px;background:rgba(15,23,42,.94);color:#fff;border-radius:999px;font-size:11px;font-weight:600;opacity:0;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease">Read article &rarr;</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:20px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:.14em;color:#94a3b8">BLOG<span style="color:#e2e8f0;font-weight:400">|</span><span style="font-weight:500;letter-spacing:0;font-size:12px">5 min read &middot; Sep 2025</span></div>
+          <h3 data-role="title" style="margin:0;font-size:16px;font-weight:700;line-height:1.35;color:#0f172a;text-decoration:underline;text-decoration-color:transparent;text-decoration-thickness:2px;text-underline-offset:3px;transition:text-decoration-color .18s ease">Four years of backend, in numbers</h3>
+          <p style="margin:0;font-size:14px;line-height:1.6;color:#64748b;text-wrap:pretty">What I actually shipped, what broke, and the habits that stuck.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;pointer-events:none">
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">Career</span>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<footer style="border-top:1px solid #e2e8f0;background:#fff">
+  <div style="max-width:1152px;margin:0 auto;padding:22px 24px;display:flex;align-items:center;justify-content:space-between;gap:24px">
+    <nav style="display:flex;align-items:center;gap:22px">
+      <a data-nav href="landing_page.html#about" style="font-size:13px;color:#64748b;text-decoration:none">About</a>
+      <a data-nav href="landing_page.html#projects" style="font-size:13px;color:#64748b;text-decoration:none">Projects</a>
+      <a data-nav href="#" style="font-size:13px;color:#64748b;text-decoration:none">Articles</a>
+      <a data-nav href="landing_page.html#ai-chat" style="font-size:13px;color:#64748b;text-decoration:none">AI Chat</a>
+      <a data-nav href="landing_page.html#contacts" style="font-size:13px;color:#64748b;text-decoration:none">Contacts</a>
+    </nav>
+    <span style="font-size:13px;color:#94a3b8">Forged with passion in Depok &copy; daffa-pradana</span>
+  </div>
+</footer>
+
+<script>
+  /* Filter tabs. In Rails: one link per tab inside a turbo_frame_tag "articles"
+     (?kind=blog), so the grid swaps without a full reload. Plain JS here only so
+     this reference file works when opened straight from disk. */
+  document.querySelectorAll('[data-filter]').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      var scope = tab.closest('[data-tabs-scope]'), kind = tab.dataset.filter;
+      scope.querySelectorAll('[data-filter]').forEach(function (t) {
+        var on = t === tab;
+        t.style.background = on ? '#0f172a' : '#fff';
+        t.style.color = on ? '#fff' : '#475569';
+        t.style.borderColor = on ? '#0f172a' : '#e2e8f0';
+      });
+      scope.querySelectorAll('[data-kind]').forEach(function (c) {
+        c.style.display = (kind === 'all' || c.dataset.kind === kind) ? '' : 'none';
+      });
+    });
+  });
+</script>
+</body>
+</html>
