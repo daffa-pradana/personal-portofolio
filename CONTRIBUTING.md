@@ -42,5 +42,5 @@ git config core.hooksPath .githooks
 ## Deployment
 
 `main` is the deploy branch. A merge to `main` is what gets deployed to Railway.
-Deployment is currently paused until **25 July 2026**; until then, merges to `main`
+Deployment is currently paused indefinitely; until it resumes, merges to `main`
 are code-only and are not shipped to the server.
