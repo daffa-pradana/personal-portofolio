@@ -1,0 +1,37 @@
+<section class="min-h-screen flex items-center justify-center px-6 pt-16">
+  <div class="max-w-5xl mx-auto flex flex-col-reverse md:flex-row items-center gap-12 py-20">
+    <div class="flex-1 text-center md:text-left">
+      <p class="text-sm font-medium text-gray-500 uppercase tracking-widest mb-3">Hello, I'm</p>
+      <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 leading-tight">
+        Daffa Pradana
+      </h1>
+      <p class="text-xl md:text-2xl text-gray-500 font-light mb-8">
+        Seasoned Backend Engineer
+      </p>
+      <div class="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
+        <%# Rendered only when SiteSetting[:cv_url] is set — a blank setting
+            means no button rather than a link to a file that isn't there. The
+            résumé is hosted externally on purpose; see db/seeds/site_settings.yml. %>
+        <% if @cv_url.present? %>
+          <% hosted_elsewhere = @cv_url.start_with?("http") %>
+          <a href="<%= @cv_url %>"
+             <%= "target=\"_blank\" rel=\"noopener noreferrer\"".html_safe if hosted_elsewhere %>
+             <%= "download".html_safe unless hosted_elsewhere %>
+             class="inline-flex items-center justify-center px-6 py-3 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-700 transition-colors">
+            Download CV
+          </a>
+        <% end %>
+        <a href="#contacts"
+           class="inline-flex items-center justify-center px-6 py-3 <%= @cv_url.present? ? "border border-gray-900 text-gray-900 hover:bg-gray-50" : "bg-gray-900 text-white hover:bg-gray-700" %> text-sm font-medium rounded-full transition-colors">
+          Get In Touch
+        </a>
+      </div>
+    </div>
+
+    <div class="flex-shrink-0">
+      <div class="w-48 h-48 md:w-64 md:h-64 rounded-full overflow-hidden border-4 border-gray-100 shadow-lg">
+        <%= image_tag "profile.jpg.png", alt: "Daffa Pradana", class: "w-full h-full object-cover" %>
+      </div>
+    </div>
+  </div>
+</section>

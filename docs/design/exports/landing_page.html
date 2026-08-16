@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Design export — Landing page · Daffa Pradana</title>
+  <style>
+  *,*::before,*::after{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:#fff;color:#0f172a;-webkit-font-smoothing:antialiased;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",ui-sans-serif,system-ui,sans-serif}
+  a{color:#0f172a}
+
+  /* --- the whole card is one link ------------------------------------------
+     Structure: [data-card] is position:relative and contains a stretched
+     <a data-stretch> (absolute inset-0, z-1). Hover lifts the card, underlines
+     the title and reveals the destination chip.
+     Tailwind: group + group-hover:-translate-y-1 group-hover:shadow-lg …      */
+  [data-card]:hover{transform:translateY(-4px);box-shadow:0 14px 30px -14px rgba(15,23,42,.28);border-color:#cbd5e1}
+  [data-card]:hover [data-role="title"]{text-decoration-color:#0f172a}
+  [data-card]:hover [data-role="arrow"]{opacity:1;transform:translateY(0)}
+
+  /* --- the card's own button is a separate target --------------------------
+     While the pointer is on [data-btn] the card RECEDES (lift drops to 1px,
+     chip fades to 25%, underline clears) and the button takes over.
+     Tailwind: has-[[data-btn]:hover]:… (v3.4+) or a 3-line Stimulus fallback. */
+  [data-card]:has([data-btn]:hover){transform:translateY(-1px);box-shadow:0 4px 12px -6px rgba(15,23,42,.16);border-color:#e2e8f0}
+  [data-card]:has([data-btn]:hover) [data-role="title"]{text-decoration-color:transparent}
+  [data-card]:has([data-btn]:hover) [data-role="arrow"]{opacity:.25}
+
+  /* --- buttons: black pill is always the primary --------------------------- */
+  [data-btn],[data-cta]{background:#0f172a}
+  [data-btn]:hover,[data-cta]:hover{background:#000;transform:translateY(-1px);box-shadow:0 0 0 4px rgba(15,23,42,.13)}
+  [data-cta-ghost]:hover{border-color:#0f172a}
+  [data-nav]:hover{color:#0f172a}
+  [data-suggest]:hover,[data-contact]:hover{border-color:#cbd5e1;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+
+  /* --- keyboard: the stretched link and the button focus independently ----- */
+  a:focus-visible,button:focus-visible{outline:2px solid #0f172a;outline-offset:3px}
+  </style>
+</head>
+<body>
+<!--
+  ==========================================================================
+  DESIGN EXPORT · LANDING PAGE
+  Generated from the Claude design canvas — treat as the source of truth for
+  spacing, colour and structure. Do not hand-edit; re-export instead.
+  Implements: app/views/pages/home.html.erb
+  Sections: header · hero · #about · #projects · #ai-chat · #contacts · footer
+
+  HOW TO READ IT
+    Everything is inline-styled on purpose: every value you need is on the
+    element itself. Interaction states are the only thing in <style>, so the
+    hover/focus behaviour is described in exactly one place (bottom of head).
+
+  TOKEN MAP  (hex → Tailwind)
+    #ffffff  white          page background
+    #f8fafc  slate-50       alternating section tint, code block
+    #f1f5f9  slate-100      tag pills, chat bubble
+    #e2e8f0  slate-200      all 1px borders
+    #cbd5e1  slate-300      card hover border, ghost-button border
+    #94a3b8  slate-400      eyebrows, meta, placeholders
+    #64748b  slate-500      nav links, card body copy
+    #475569  slate-600      long body copy, pill text
+    #1f2937  gray-800       article prose
+    #0f172a  slate-900      ink, filled buttons, active nav
+
+  SCALE
+    container        max-w-[1152px] mx-auto px-6
+    header           h-16, sticky, bg-white/90 backdrop-blur, border-b
+    section rhythm   py-[88px] (hero py-28)
+    radius           cards rounded-xl(12) · pills rounded-md(6) · buttons rounded-full
+    type             h1 60/44/40 · h2 32 · card title 16 · body 15 · nav 14 · pills 12
+    prose            Source Serif 4 20/1.78 on a 680px measure
+
+  INTERACTION HOOKS
+    [data-card]       card = link. relative; contains the stretched <a>
+    [data-stretch]    absolute inset-0 z-1 — makes the whole card clickable
+                      (real href: ⌘-click and middle-click work, no JS)
+    [data-btn]        the card's own action. relative z-2, sits above the
+                      stretched link, so no stopPropagation is needed
+    [data-role=arrow] destination chip, revealed on card hover
+    [data-role=title] title underline, revealed on card hover
+    tag pills         pointer-events:none — static labels, never filters
+  ========================================================================== -->
+
+<header style="position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid #e2e8f0">
+  <div style="max-width:1152px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between">
+    <a href="#top" style="font-size:16px;font-weight:700;letter-spacing:-.01em;text-decoration:none;color:#0f172a">Daffa Pradana</a>
+    <nav style="display:flex;align-items:center;gap:32px">
+      <a data-nav href="#about" style="font-size:14px;color:#64748b;text-decoration:none;transition:color .15s ease">About</a>
+      <a data-nav href="#projects" style="font-size:14px;color:#64748b;text-decoration:none;transition:color .15s ease">Projects</a>
+      <a data-nav href="articles_index.html" style="font-size:14px;color:#64748b;text-decoration:none;transition:color .15s ease">Articles</a>
+      <a data-nav href="#ai-chat" style="font-size:14px;color:#64748b;text-decoration:none;transition:color .15s ease">AI Chat</a>
+      <a data-nav href="#contacts" style="font-size:14px;color:#64748b;text-decoration:none;transition:color .15s ease">Contacts</a>
+    </nav>
+  </div>
+</header>
+
+<section id="top" style="background:#fff">
+  <div style="max-width:1152px;margin:0 auto;padding:112px 24px 120px;display:flex;align-items:center;justify-content:center;gap:72px">
+    <div style="display:flex;flex-direction:column;align-items:flex-start;max-width:520px">
+      <span style="font-size:12px;font-weight:600;letter-spacing:.2em;color:#94a3b8;margin-bottom:14px">HELLO, I&rsquo;M</span>
+      <h1 style="margin:0 0 12px;font-size:60px;font-weight:700;line-height:1.05;letter-spacing:-.03em;color:#0f172a">Daffa Pradana</h1>
+      <p style="margin:0 0 32px;font-size:20px;line-height:1.5;color:#64748b">Seasoned Backend Engineer</p>
+      <div style="display:flex;align-items:center;gap:12px">
+        <a data-cta href="#" style="display:inline-flex;align-items:center;gap:8px;padding:13px 24px;color:#fff;border-radius:999px;font-size:14px;font-weight:600;text-decoration:none;transition:background .16s ease,transform .16s ease,box-shadow .16s ease">Download CV</a>
+        <a data-cta-ghost href="#contacts" style="display:inline-flex;align-items:center;gap:8px;padding:13px 24px;background:#fff;color:#0f172a;border:1px solid #cbd5e1;border-radius:999px;font-size:14px;font-weight:600;text-decoration:none;transition:border-color .16s ease,background .16s ease">Get In Touch</a>
+      </div>
+    </div>
+    <div style="flex:none;width:224px;height:224px;border-radius:999px;overflow:hidden;background:repeating-linear-gradient(135deg,#eef1f5 0 10px,#e8edf3 10px 20px);display:flex;align-items:center;justify-content:center">
+      <span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.09em;color:#94a3b8">PORTRAIT</span>
+    </div>
+  </div>
+</section>
+
+<section id="about" style="background:#f8fafc;border-top:1px solid #eef2f6;border-bottom:1px solid #eef2f6">
+  <div style="max-width:1152px;margin:0 auto;padding:88px 24px">
+    <span style="display:block;font-size:12px;font-weight:600;letter-spacing:.2em;color:#94a3b8;margin-bottom:10px">GET TO KNOW</span>
+    <h2 style="margin:0 0 36px;font-size:32px;font-weight:700;letter-spacing:-.02em;color:#0f172a">About Me</h2>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:56px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:18px;font-size:15px;line-height:1.75;color:#475569">
+        <p style="margin:0;text-wrap:pretty">I&rsquo;m a seasoned backend engineer with <b style="color:#0f172a;font-weight:600">4 years of professional experience</b> specializing in Ruby on Rails, PostgreSQL, Redis, Sidekiq and some familiarities with (GKE) Kubernetes, earlier honing my skills through a brief web programming internship and freelance projects.</p>
+        <p style="margin:0;text-wrap:pretty">I excel at optimizing performance (e.g., slicing response times by 85%, architecting async background jobs to eliminate N+1 query bottlenecks), building robust integrations that fueled contract renewals and new deals, and delivering data-driven features that grew our user base from 150 to 1,574.</p>
+        <p style="margin:0;text-wrap:pretty">Skilled in CI/CD (CircleCI), error tracing (Sentry), testing (RSpec), and data querying (Redash), I&rsquo;m a fast learner with a growing AI focus and the flexibility to contribute across the full stack when needed.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div style="padding:20px;background:#fff;border:1px solid #e2e8f0;border-radius:12px">
+          <div style="font-size:24px;font-weight:700;letter-spacing:-.02em;color:#0f172a;margin-bottom:4px">4+</div>
+          <div style="font-size:13px;color:#64748b">Years of experience</div>
+        </div>
+        <div style="padding:20px;background:#fff;border:1px solid #e2e8f0;border-radius:12px">
+          <div style="font-size:24px;font-weight:700;letter-spacing:-.02em;color:#0f172a;margin-bottom:4px">85%</div>
+          <div style="font-size:13px;color:#64748b">Response time improvement</div>
+        </div>
+        <div style="padding:20px;background:#fff;border:1px solid #e2e8f0;border-radius:12px">
+          <div style="font-size:24px;font-weight:700;letter-spacing:-.02em;color:#0f172a;margin-bottom:4px">Ruby</div>
+          <div style="font-size:13px;color:#64748b">Primary language</div>
+        </div>
+        <div style="padding:20px;background:#fff;border:1px solid #e2e8f0;border-radius:12px">
+          <div style="font-size:24px;font-weight:700;letter-spacing:-.02em;color:#0f172a;margin-bottom:4px">Rails</div>
+          <div style="font-size:13px;color:#64748b">Core framework</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="projects" style="background:#fff">
+  <div style="max-width:1152px;margin:0 auto;padding:88px 24px">
+    <span style="display:block;font-size:12px;font-weight:600;letter-spacing:.2em;color:#94a3b8;margin-bottom:10px">WHAT I&rsquo;VE BEEN WORKING ON</span>
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:24px;margin-bottom:36px">
+      <h2 style="margin:0;font-size:32px;font-weight:700;letter-spacing:-.02em;color:#0f172a">My Latest Projects</h2>
+      <a href="articles_index.html" style="font-size:14px;font-weight:600;color:#64748b;text-decoration:none;white-space:nowrap">All articles &rarr;</a>
+    </div>
+
+    <div data-grid style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px">
+
+      <article data-card style="position:relative;display:flex;flex-direction:column;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 2px rgba(15,23,42,.04);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease">
+        <a data-stretch href="article_show.html" aria-label="Read the case study: H5 – Jira Project Integration" style="position:absolute;inset:0;z-index:1;border-radius:12px"></a>
+        <div style="position:relative;aspect-ratio:16/10;border-radius:12px 12px 0 0;overflow:hidden;background:repeating-linear-gradient(135deg,#eef1f5 0 10px,#e8edf3 10px 20px);display:flex;align-items:center;justify-content:center">
+          <span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.09em;color:#94a3b8">PROJECT SHOT</span>
+          <span data-role="arrow" style="position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:6px;padding:6px 11px;background:rgba(15,23,42,.94);color:#fff;border-radius:999px;font-size:11px;font-weight:600;opacity:0;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease">Read case study &rarr;</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:20px">
+          <h3 data-role="title" style="margin:0;font-size:16px;font-weight:700;line-height:1.35;color:#0f172a;text-decoration:underline;text-decoration-color:transparent;text-decoration-thickness:2px;text-underline-offset:3px;transition:text-decoration-color .18s ease">H5 &ndash; Jira Project Integration</h3>
+          <p style="margin:0;font-size:14px;line-height:1.6;color:#64748b;text-wrap:pretty">Built a seamless integration between Happy5 and Jira, enabling teams to sync OKR tasks without leaving either tool.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;pointer-events:none">
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">Ruby on Rails</span>
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">REST API</span>
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">Jira API</span>
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">Sidekiq</span>
+          </div>
+          <div style="display:flex;margin-top:6px">
+            <a data-btn href="https://happy5.co" target="_blank" rel="noopener" style="position:relative;z-index:2;display:inline-flex;align-items:center;gap:6px;padding:9px 15px;color:#fff;border-radius:999px;font-size:13px;font-weight:600;text-decoration:none;transition:background .16s ease,transform .16s ease,box-shadow .16s ease">Product Page <span style="font-size:11px;opacity:.8">&#8599;</span></a>
+          </div>
+        </div>
+      </article>
+
+      <article data-card style="position:relative;display:flex;flex-direction:column;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 2px rgba(15,23,42,.04);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease">
+        <a data-stretch href="article_show.html" aria-label="Read the case study: H5 – Goal Custom Order" style="position:absolute;inset:0;z-index:1;border-radius:12px"></a>
+        <div style="position:relative;aspect-ratio:16/10;border-radius:12px 12px 0 0;overflow:hidden;background:repeating-linear-gradient(135deg,#eef1f5 0 10px,#e8edf3 10px 20px);display:flex;align-items:center;justify-content:center">
+          <span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.09em;color:#94a3b8">PROJECT SHOT</span>
+          <span data-role="arrow" style="position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:6px;padding:6px 11px;background:rgba(15,23,42,.94);color:#fff;border-radius:999px;font-size:11px;font-weight:600;opacity:0;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease">Read case study &rarr;</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:20px">
+          <h3 data-role="title" style="margin:0;font-size:16px;font-weight:700;line-height:1.35;color:#0f172a;text-decoration:underline;text-decoration-color:transparent;text-decoration-thickness:2px;text-underline-offset:3px;transition:text-decoration-color .18s ease">H5 &ndash; Goal Custom Order</h3>
+          <p style="margin:0;font-size:14px;line-height:1.6;color:#64748b;text-wrap:pretty">Designed and implemented a drag-to-reorder feature for OKR goals, allowing users to arrange priorities their own way.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;pointer-events:none">
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">Ruby on Rails</span>
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">PostgreSQL</span>
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">Sidekiq</span>
+          </div>
+        </div>
+      </article>
+
+      <article data-card style="position:relative;display:flex;flex-direction:column;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 2px rgba(15,23,42,.04);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease">
+        <a data-stretch href="article_show.html" aria-label="Read the case study: RAG – AI Chatbot" style="position:absolute;inset:0;z-index:1;border-radius:12px"></a>
+        <div style="position:relative;aspect-ratio:16/10;border-radius:12px 12px 0 0;overflow:hidden;background:repeating-linear-gradient(135deg,#eef1f5 0 10px,#e8edf3 10px 20px);display:flex;align-items:center;justify-content:center">
+          <span style="font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:.09em;color:#94a3b8">PROJECT SHOT</span>
+          <span data-role="arrow" style="position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:6px;padding:6px 11px;background:rgba(15,23,42,.94);color:#fff;border-radius:999px;font-size:11px;font-weight:600;opacity:0;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease">Read case study &rarr;</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:20px">
+          <h3 data-role="title" style="margin:0;font-size:16px;font-weight:700;line-height:1.35;color:#0f172a;text-decoration:underline;text-decoration-color:transparent;text-decoration-thickness:2px;text-underline-offset:3px;transition:text-decoration-color .18s ease">RAG &ndash; AI Chatbot</h3>
+          <p style="margin:0;font-size:14px;line-height:1.6;color:#64748b;text-wrap:pretty">Built a Retrieval-Augmented Generation chatbot on top of a personal knowledge base, answering questions about my work.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;pointer-events:none">
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">Ruby on Rails</span>
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">Groq API</span>
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">Hotwire</span>
+            <span style="padding:4px 9px;background:#f1f5f9;color:#475569;border-radius:6px;font-size:12px;font-weight:500">LLM</span>
+          </div>
+          <div style="display:flex;margin-top:6px">
+            <a data-btn href="#ai-chat" style="position:relative;z-index:2;display:inline-flex;align-items:center;gap:6px;padding:9px 15px;color:#fff;border-radius:999px;font-size:13px;font-weight:600;text-decoration:none;transition:background .16s ease,transform .16s ease,box-shadow .16s ease">Try Here! <span style="font-size:11px;opacity:.8">&darr;</span></a>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<section id="ai-chat" style="background:#f8fafc;border-top:1px solid #eef2f6;border-bottom:1px solid #eef2f6;scroll-margin-top:64px">
+  <div style="max-width:1152px;margin:0 auto;padding:88px 24px">
+    <span style="display:block;font-size:12px;font-weight:600;letter-spacing:.2em;color:#94a3b8;margin-bottom:10px">KNOW MORE ABOUT ME</span>
+    <h2 style="margin:0 0 36px;font-size:32px;font-weight:700;letter-spacing:-.02em;color:#0f172a">Chat with AI</h2>
+    <div style="display:grid;grid-template-columns:300px minmax(0,1fr);gap:24px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span style="font-size:13px;font-weight:600;color:#64748b;margin-bottom:2px">Suggested questions</span>
+        <button data-suggest style="text-align:left;padding:12px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;font-family:inherit;font-size:14px;color:#0f172a;cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease">What&rsquo;s Daffa&rsquo;s tech stack?</button>
+        <button data-suggest style="text-align:left;padding:12px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;font-family:inherit;font-size:14px;color:#0f172a;cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease">Tell me about Daffa&rsquo;s experience</button>
+        <button data-suggest style="text-align:left;padding:12px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;font-family:inherit;font-size:14px;color:#0f172a;cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease">What projects has Daffa worked on?</button>
+        <button data-suggest style="text-align:left;padding:12px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;font-family:inherit;font-size:14px;color:#0f172a;cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease">How can I contact Daffa?</button>
+      </div>
+      <div style="display:flex;flex-direction:column;height:440px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+        <div style="padding:14px 18px;border-bottom:1px solid #eef2f6;font-size:13px;color:#94a3b8">Ask me anything about Daffa &mdash; keep it short for quick answers.</div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:14px;padding:18px;overflow:hidden">
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <span style="flex:none;width:28px;height:28px;border-radius:999px;background:#0f172a;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">AI</span>
+            <div style="max-width:440px;padding:12px 14px;background:#f1f5f9;border-radius:12px;font-size:14px;line-height:1.6;color:#0f172a">Hi! I&rsquo;m Daffa&rsquo;s AI assistant. Ask me anything about his experience, skills, or projects.</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:14px 18px;border-top:1px solid #eef2f6">
+          <input placeholder="Ask about Daffa..." style="flex:1;padding:11px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:999px;font-family:inherit;font-size:14px;color:#0f172a;outline:none">
+          <button data-cta style="padding:11px 20px;color:#fff;border:0;border-radius:999px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background .16s ease">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="contacts" style="background:#fff;scroll-margin-top:64px">
+  <div style="max-width:1152px;margin:0 auto;padding:88px 24px;display:flex;flex-direction:column;align-items:center;text-align:center">
+    <h2 style="margin:0 0 12px;font-size:32px;font-weight:700;letter-spacing:-.02em;color:#0f172a">My Contacts</h2>
+    <p style="margin:0 0 28px;font-size:15px;line-height:1.6;color:#64748b">Feel free to reach out &mdash; I&rsquo;m always open to a good conversation.</p>
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px">
+      <a data-contact href="mailto:daffaarravi@gmail.com" style="display:inline-flex;align-items:center;gap:9px;padding:11px 18px;background:#fff;border:1px solid #e2e8f0;border-radius:999px;font-size:14px;color:#0f172a;text-decoration:none;transition:border-color .15s ease,box-shadow .15s ease"><span data-icon style="flex:none;width:16px;height:16px;border-radius:4px;background:#e2e8f0"></span>daffaarravi@gmail.com</a>
+      <a data-contact href="#" style="display:inline-flex;align-items:center;gap:9px;padding:11px 18px;background:#fff;border:1px solid #e2e8f0;border-radius:999px;font-size:14px;color:#0f172a;text-decoration:none;transition:border-color .15s ease,box-shadow .15s ease"><span data-icon style="flex:none;width:16px;height:16px;border-radius:4px;background:#e2e8f0"></span>LinkedIn</a>
+      <a data-contact href="#" style="display:inline-flex;align-items:center;gap:9px;padding:11px 18px;background:#fff;border:1px solid #e2e8f0;border-radius:999px;font-size:14px;color:#0f172a;text-decoration:none;transition:border-color .15s ease,box-shadow .15s ease"><span data-icon style="flex:none;width:16px;height:16px;border-radius:4px;background:#e2e8f0"></span>GitHub</a>
+    </div>
+  </div>
+</section>
+
+<footer style="border-top:1px solid #e2e8f0;background:#fff">
+  <div style="max-width:1152px;margin:0 auto;padding:22px 24px;display:flex;align-items:center;justify-content:space-between;gap:24px">
+    <nav style="display:flex;align-items:center;gap:22px">
+      <a data-nav href="#about" style="font-size:13px;color:#64748b;text-decoration:none">About</a>
+      <a data-nav href="#projects" style="font-size:13px;color:#64748b;text-decoration:none">Projects</a>
+      <a data-nav href="articles_index.html" style="font-size:13px;color:#64748b;text-decoration:none">Articles</a>
+      <a data-nav href="#ai-chat" style="font-size:13px;color:#64748b;text-decoration:none">AI Chat</a>
+      <a data-nav href="#contacts" style="font-size:13px;color:#64748b;text-decoration:none">Contacts</a>
+    </nav>
+    <span style="font-size:13px;color:#94a3b8">Forged with passion in Depok &copy; daffa-pradana</span>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,13 @@
+# cv_url is blank here to mirror the seeded default, so the landing page tests
+# exercise the "no CV configured" path unless a test sets it explicitly.
+cv_url:
+  key: cv_url
+  value: ~
+
+configured_example:
+  key: configured_example
+  value: "a value"
+
+blank_example:
+  key: blank_example
+  value: ""
