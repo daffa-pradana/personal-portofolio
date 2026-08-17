@@ -1,0 +1,86 @@
+<%= form_with model: [ :admin, article ], class: "space-y-6" do |form| %>
+  <% if article.errors.any? %>
+    <div class="py-3 px-4 bg-red-50 text-red-700 rounded-lg text-sm">
+      <p class="font-medium"><%= pluralize(article.errors.count, "error") %> prevented this article from saving:</p>
+      <ul class="list-disc list-inside mt-1">
+        <% article.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+    <div>
+      <%= form.label :title, class: "block text-sm font-medium text-gray-900" %>
+      <%= form.text_field :title, required: true, class: "block shadow-sm rounded-md border border-gray-300 focus:outline-gray-900 px-3 py-2 mt-2 w-full" %>
+    </div>
+
+    <div>
+      <%= form.label :slug, "Slug (optional — auto-generated from title if blank)", class: "block text-sm font-medium text-gray-900" %>
+      <%= form.text_field :slug, class: "block shadow-sm rounded-md border border-gray-300 focus:outline-gray-900 px-3 py-2 mt-2 w-full" %>
+    </div>
+  </div>
+
+  <div>
+    <%= form.label :subtitle, class: "block text-sm font-medium text-gray-900" %>
+    <%= form.text_field :subtitle, class: "block shadow-sm rounded-md border border-gray-300 focus:outline-gray-900 px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+    <div>
+      <%= form.label :article_type, class: "block text-sm font-medium text-gray-900" %>
+      <%= form.select :article_type, Article.article_types.keys.map { |t| [ t.titleize, t ] },
+            {}, class: "block shadow-sm rounded-md border border-gray-300 focus:outline-gray-900 px-3 py-2 mt-2 w-full" %>
+    </div>
+
+    <div>
+      <%= form.label :status, class: "block text-sm font-medium text-gray-900" %>
+      <%= form.select :status, Article.statuses.keys.map { |s| [ s.titleize, s ] },
+            {}, class: "block shadow-sm rounded-md border border-gray-300 focus:outline-gray-900 px-3 py-2 mt-2 w-full" %>
+    </div>
+
+    <div>
+      <%= form.label :position, "Position (lower = earlier)", class: "block text-sm font-medium text-gray-900" %>
+      <%= form.number_field :position, class: "block shadow-sm rounded-md border border-gray-300 focus:outline-gray-900 px-3 py-2 mt-2 w-full" %>
+    </div>
+  </div>
+
+  <div>
+    <%= form.label :tags, "Tags (comma-separated)", class: "block text-sm font-medium text-gray-900" %>
+    <%= form.text_field :tags, value: article.tags&.join(", "), placeholder: "Ruby on Rails, PostgreSQL",
+          class: "block shadow-sm rounded-md border border-gray-300 focus:outline-gray-900 px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+    <div>
+      <%= form.label :button_label, "Button label (optional)", class: "block text-sm font-medium text-gray-900" %>
+      <%= form.text_field :button_label, placeholder: "Product Page", class: "block shadow-sm rounded-md border border-gray-300 focus:outline-gray-900 px-3 py-2 mt-2 w-full" %>
+    </div>
+
+    <div>
+      <%= form.label :button_url, "Button URL (external link or #anchor)", class: "block text-sm font-medium text-gray-900" %>
+      <%= form.text_field :button_url, placeholder: "https://example.com or #chat-with-ai", class: "block shadow-sm rounded-md border border-gray-300 focus:outline-gray-900 px-3 py-2 mt-2 w-full" %>
+    </div>
+  </div>
+
+  <div>
+    <%= form.label :cover_image, class: "block text-sm font-medium text-gray-900" %>
+    <% if article.cover_image.attached? %>
+      <%= image_tag article.cover_image, class: "mt-2 rounded-lg h-32 object-cover" %>
+    <% end %>
+    <%= form.file_field :cover_image, accept: "image/*", class: "block mt-2 w-full text-sm text-gray-600" %>
+  </div>
+
+  <div>
+    <%= form.label :body, class: "block text-sm font-medium text-gray-900" %>
+    <div class="mt-2">
+      <%= form.rich_text_area :body %>
+    </div>
+  </div>
+
+  <div>
+    <%= form.submit class: "rounded-md px-3.5 py-2.5 bg-gray-900 hover:bg-gray-700 text-white text-sm font-medium cursor-pointer" %>
+    <%= link_to "Cancel", admin_articles_path, class: "ml-4 text-sm font-medium text-gray-600 hover:text-gray-900" %>
+  </div>
+<% end %>

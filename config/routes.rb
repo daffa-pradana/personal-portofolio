@@ -3,6 +3,15 @@ Rails.application.routes.draw do
   resources :passwords, param: :token
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
+  # Admin CMS. Article#to_param returns the slug (see app/models/article.rb),
+  # so `param: :slug` here just makes the route param name match what's
+  # actually in the URL — without it the segment is still a slug, but the
+  # controller would be looking it up under params[:id].
+  namespace :admin do
+    root "dashboard#index"
+    resources :articles, param: :slug
+  end
+
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check

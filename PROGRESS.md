@@ -7,15 +7,16 @@
 > in full each time.
 
 **Last updated:** 2026-08-16
-**Current focus:** Batch 2 — Articles CMS. Auth generator done (PR #32); next up
-is the admin namespace (`Admin::BaseController` + Article CRUD with Trix).
+**Current focus:** Batch 2 — Articles CMS. Admin namespace + Article CRUD done
+(PR #36); next up is the public articles index/show pages + `_card.html.erb`.
 
 ---
 
 ## 🚨 Action Needed First
 
-- [ ] **Nothing blocking.** Next up is the admin namespace: `Admin::BaseController`
-      (auth gate) and the Article CRUD with the Trix editor.
+- [ ] **Nothing blocking.** Next up is the public-facing side of Batch 2:
+      `_card.html.erb` (stretched-link pattern), the `/articles` index with
+      All/Blog/Case Studies filter tabs, and the article show page.
 - [ ] Create a local admin user before using the CMS:
       `ADMIN_EMAIL=... ADMIN_PASSWORD=... bin/rails db:seed`
 - [x] ~~CI red on `main`~~ — fixed by PR #30 (Ruby 3.4.7 + Rails 8.1.3.1),
@@ -157,7 +158,14 @@ not as a side effect of a version bump.
   - [ ] `config/environments/production.rb:61` still has the generator's
         placeholder `default_url_options = { host: "example.com" }`. Password
         reset links would point at the wrong host. Parked with deployment.
-- [ ] Admin namespace: Article CRUD (type selector, Trix editor)
+- [x] Admin namespace: Article CRUD (type selector, Trix editor) — PR #36.
+      `Admin::BaseController` adds no opt-out, so it inherits
+      `require_authentication` from `ApplicationController` — that's the
+      whole auth gate. Routes use `resources :articles, param: :slug` to
+      match `Article#to_param` (global slug lookup); `tags` is a single
+      comma-separated text field, split into the Postgres array column
+      server-side. Drag-to-reorder for `position` deliberately deferred —
+      a plain number field covers the curation need for now.
 - [ ] `_card.html.erb` partial with stretched-link pattern (shared: landing
       page "My Latest Projects" + articles index)
 - [ ] Public articles index (`/articles`, filter tabs: All/Blog/Case Studies)
@@ -207,6 +215,22 @@ not as a side effect of a version bump.
 ## Session Log
 
 Brief notes per work session — what got done, what decisions were made, what's blocked.
+
+### 2026-08-16 (later — admin namespace + Article CRUD)
+
+- Built `Admin::BaseController`, `Admin::DashboardController`, and
+  `Admin::ArticlesController` (full CRUD) — PR #36.
+- Verified beyond the test suite: booted the app in development, created a
+  throwaway admin user, and drove create → edit → update → destroy over
+  real HTTP (curl with a real cookie jar and CSRF tokens, not just the test
+  DB) before removing the probe user. Confirmed tags round-trip through the
+  comma-separated text field into the Postgres array column, and that the
+  slug-based route lookup (`param: :slug`) actually resolves — this was the
+  one part of the design that couldn't be trusted from the test suite alone,
+  since `Article#to_param` returning the slug globally is easy to get
+  subtly wrong (e.g. `Article.find(params[:id])` would have looked right in
+  a diff but 404'd for real, since the URL segment is never a numeric id).
+- 51 -> 62 tests, all green. 0 rubocop offenses, 0 brakeman warnings.
 
 ### 2026-08-16 — Dependabot housekeeping sweep
 
