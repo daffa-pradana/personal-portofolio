@@ -7,16 +7,16 @@
 > in full each time.
 
 **Last updated:** 2026-08-16
-**Current focus:** Batch 2 — Articles CMS. Admin namespace + Article CRUD done
-(PR #36); next up is the public articles index/show pages + `_card.html.erb`.
+**Current focus:** Batch 2 is complete (pending PR merge). Next up is Batch 3
+— the RAG AI chatbot (KnowledgeEntry model, ChatService/Groq, ChatsController).
 
 ---
 
 ## 🚨 Action Needed First
 
-- [ ] **Nothing blocking.** Next up is the public-facing side of Batch 2:
-      `_card.html.erb` (stretched-link pattern), the `/articles` index with
-      All/Blog/Case Studies filter tabs, and the article show page.
+- [ ] **Nothing blocking.** Next up is Batch 3: `KnowledgeEntry` model,
+      `ChatService` (Groq API integration), `ChatsController` with rate
+      limiting, chat UI via Turbo Streams.
 - [ ] Create a local admin user before using the CMS:
       `ADMIN_EMAIL=... ADMIN_PASSWORD=... bin/rails db:seed`
 - [x] ~~CI red on `main`~~ — fixed by PR #30 (Ruby 3.4.7 + Rails 8.1.3.1),
@@ -166,13 +166,27 @@ not as a side effect of a version bump.
       comma-separated text field, split into the Postgres array column
       server-side. Drag-to-reorder for `position` deliberately deferred —
       a plain number field covers the curation need for now.
-- [ ] `_card.html.erb` partial with stretched-link pattern (shared: landing
-      page "My Latest Projects" + articles index)
-- [ ] Public articles index (`/articles`, filter tabs: All/Blog/Case Studies)
-- [ ] Public article show page (Medium-style, matches `docs/design/exports/article_show.html`)
-- [ ] Turbo Frame filtering on articles index
-- [ ] Navbar "Articles" link wired to `/articles`
-- [ ] SEO meta tags
+- [x] `_card.html.erb` partial with stretched-link pattern — shared by the
+      landing page's "My Latest Projects" section (`show_meta: false`, no
+      type/date/reading-time line — the design export deliberately omits it
+      there) and the articles index (`show_meta: true`, the default).
+- [x] Public articles index (`/articles`) — filter tabs All/Blog/Case Studies.
+- [x] Public article show page (Medium-style) — Source Serif 4 20px/1.78 on
+      a 680px measure, scoped via `.article-body .trix-content` in
+      `application.css` so the admin's Trix editor keeps its own sizing.
+- [x] Turbo Frame filtering on articles index — one `turbo_frame_tag
+      "articles"` wraps both the tabs and the grid; tab links are plain
+      `articles_path(kind: ...)` GETs, no controller branching needed beyond
+      filtering `@articles` by `params[:kind]`.
+- [x] Navbar "Articles" link wired to `/articles` — `_navbar.html.erb` and
+      `_footer.html.erb` now use `root_path(anchor: "about")` etc. instead of
+      bare `"#about"`, so the same partials work unchanged from `/articles`
+      and `/articles/:slug` (real navigation back to `/`, then scroll) as
+      well as from the landing page itself (plain in-page scroll).
+- [x] SEO meta tags — `<title>`/description/Open Graph tags in
+      `application.html.erb`, set per-page via `content_for`.
+
+**Batch 2 is now functionally complete**, pending PR review/merge.
 
 ## Batch 3: RAG AI Chatbot
 
@@ -215,6 +229,43 @@ not as a side effect of a version bump.
 ## Session Log
 
 Brief notes per work session — what got done, what decisions were made, what's blocked.
+
+### 2026-08-22 — public articles pages (Batch 2 complete)
+
+- Built the entire public-facing remainder of Batch 2 in one PR:
+  `_card.html.erb`, the `/articles` index with Turbo Frame filter tabs, the
+  article show page, navbar/footer wiring, and SEO meta tags.
+- Refactored `_projects.html.erb` (landing page) to render the new shared
+  `articles/_card` partial instead of its own inline markup — the design
+  export's own README explicitly calls out that the two cards should share
+  one partial. Caught a real discrepancy while translating: the landing
+  page's cards deliberately omit the "type · reading time · date" meta line
+  that the articles-index cards have (`docs/design/README.md`'s own
+  "Decisions I made" section flags this), so the partial takes a
+  `show_meta:` local rather than always rendering it.
+- `_navbar.html.erb`/`_footer.html.erb` switched from bare `"#about"` anchors
+  to `root_path(anchor: "about")` etc. — works identically on the landing
+  page and lets the exact same partials be reused on `/articles` and
+  `/articles/:slug` without any "am I on the home page" branching.
+- Turbo Frame filtering needed zero JS and zero extra controller logic:
+  wrapping both the tabs and the grid in one `turbo_frame_tag "articles"`
+  is enough — Turbo automatically extracts the matching frame from
+  whichever full-page response comes back, so `ArticlesController#index`
+  only had to filter `@articles` by `params[:kind]`.
+- Article prose typography (Source Serif 4, 20px/1.78, 680px measure) is
+  scoped via a `.article-body .trix-content` compound selector in
+  `application.css` — deliberately not touching plain `.trix-content`,
+  which would also restyle the Trix editor while writing in the admin CMS.
+  Higher specificity than actiontext.css's single-class rule wins regardless
+  of stylesheet load order, so this doesn't depend on file ordering.
+- Brakeman caught a real (if low-severity) issue during verification: the
+  byline's `"date · reading time"` line used `&middot;` + `.html_safe` on a
+  join of model-derived strings — flagged as "unescaped model attribute."
+  Fixed by using a literal `·` character and dropping `.html_safe` entirely,
+  in both this page and the card partial.
+- 62 -> 73 tests, all green. 0 rubocop offenses, 0 brakeman warnings.
+- **Batch 2 is functionally complete** as of this PR (pending review/merge).
+  Batch 3 (RAG AI chatbot) is next.
 
 ### 2026-08-16 (later — admin namespace + Article CRUD)
 

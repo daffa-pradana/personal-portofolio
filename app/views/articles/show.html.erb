@@ -1,0 +1,68 @@
+<% content_for :title, "#{@article.title} — Daffa Pradana" %>
+<% content_for :meta_description, @article.subtitle.presence || "An article by Daffa Pradana." %>
+<% content_for :og_type, "article" %>
+<% content_for :head do %>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<% end %>
+
+<%= render "pages/navbar", current: :articles %>
+
+<article class="bg-white pt-24 pb-24">
+  <div class="max-w-[680px] mx-auto px-6">
+    <%= link_to "&larr; All articles".html_safe, articles_path, class: "inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors mb-8" %>
+
+    <span class="inline-block px-3 py-1.5 bg-gray-900 text-white rounded-full text-xs font-semibold tracking-widest mb-4">
+      <%= @article.article_type.titleize.upcase %>
+    </span>
+
+    <h1 class="text-4xl md:text-[44px] font-bold leading-tight tracking-tight text-gray-900 mb-4"><%= @article.title %></h1>
+
+    <% if @article.subtitle.present? %>
+      <p class="text-xl leading-relaxed text-gray-500 mb-6"><%= @article.subtitle %></p>
+    <% end %>
+
+    <div class="flex items-center gap-3 pb-5 border-b border-gray-200">
+      <div class="flex-none w-10 h-10 rounded-full bg-gray-100"></div>
+      <div class="flex flex-col gap-0.5">
+        <span class="text-sm font-semibold text-gray-900">Daffa Pradana</span>
+        <span class="text-xs text-gray-400">
+          <%= [ @article.published_at&.strftime("%b %-d, %Y"), ("#{@article.reading_time} min read" if @article.reading_time) ].compact.join(" · ") %>
+        </span>
+      </div>
+    </div>
+
+    <% if @article.tags.present? %>
+      <div class="flex flex-wrap gap-1.5 mt-5 pointer-events-none">
+        <% @article.tags.each do |tag| %>
+          <span class="px-2.5 py-1 bg-gray-100 text-gray-600 rounded-md text-xs font-medium"><%= tag %></span>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if @article.button_label.present? && @article.button_url.present? %>
+      <% scroll_link = @article.button_url.start_with?("#") %>
+      <div class="mt-6">
+        <%= link_to @article.button_url,
+              class: "inline-flex items-center gap-1.5 px-5 py-3 bg-gray-900 hover:bg-black text-white rounded-full text-sm font-semibold no-underline transition-colors",
+              data: (scroll_link ? { turbo: false } : {}),
+              **(scroll_link ? {} : { target: "_blank", rel: "noopener noreferrer" }) do %>
+          <%= @article.button_label %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @article.cover_image.attached? %>
+    <div class="max-w-[680px] mx-auto px-6 mt-9">
+      <%= image_tag @article.cover_image, alt: @article.title, class: "w-full aspect-video object-cover rounded-xl" %>
+    </div>
+  <% end %>
+
+  <div class="article-body max-w-[680px] mx-auto px-6 mt-9">
+    <%= @article.body %>
+  </div>
+</article>
+
+<%= render "pages/footer" %>

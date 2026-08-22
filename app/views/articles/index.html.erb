@@ -1,0 +1,33 @@
+<% content_for :title, "Articles — Daffa Pradana" %>
+<% content_for :meta_description, "Notes from the backend — and the long version of the projects on the home page." %>
+
+<%= render "pages/navbar", current: :articles %>
+
+<section class="pt-32 pb-24 px-6 bg-white">
+  <div class="max-w-5xl mx-auto">
+    <span class="block text-xs font-semibold tracking-widest text-gray-400 mb-2.5">WRITING &amp; CASE STUDIES</span>
+    <h1 class="text-4xl font-bold text-gray-900 tracking-tight mb-3">Articles</h1>
+    <p class="text-gray-500 max-w-lg mb-8">Notes from the backend &mdash; and the long version of the projects on the home page.</p>
+
+    <%= turbo_frame_tag "articles" do %>
+      <div class="flex items-center gap-2 mb-8">
+        <% [ [ "All", "all" ], [ "Blog", "blog" ], [ "Case Studies", "case_study" ] ].each do |label, kind| %>
+          <%= link_to label, (kind == "all" ? articles_path : articles_path(kind: kind)),
+                class: @kind == kind ? "px-4 py-2 bg-gray-900 text-white border border-gray-900 rounded-full text-sm font-semibold" : "px-4 py-2 bg-white text-gray-600 border border-gray-200 rounded-full text-sm font-semibold hover:border-gray-300 transition-colors" %>
+        <% end %>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <% @articles.each do |article| %>
+          <%= render "articles/card", article: article %>
+        <% end %>
+      </div>
+
+      <% if @articles.empty? %>
+        <p class="text-gray-500 py-12 text-center">No articles here yet.</p>
+      <% end %>
+    <% end %>
+  </div>
+</section>
+
+<%= render "pages/footer" %>
