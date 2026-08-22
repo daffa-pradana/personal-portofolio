@@ -47,6 +47,19 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-frame#articles"
   end
 
+  # Regression test: a card's link lives inside turbo_frame_tag "articles"
+  # on this page. Without data-turbo-frame="_top", Turbo scopes the click to
+  # that frame, fetches the show page looking for a matching #articles frame
+  # in it (there isn't one), and renders "Content missing" instead of
+  # navigating — without even updating the URL, since frame navigations
+  # don't touch browser history.
+  test "a card's link breaks out of the surrounding turbo frame" do
+    get articles_path
+
+    assert_select "turbo-frame#articles a[href=?][data-turbo-frame=?]",
+      article_path(articles(:jira_integration)), "_top"
+  end
+
   test "show renders a published article" do
     get article_path(articles(:jira_integration))
 

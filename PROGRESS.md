@@ -230,6 +230,34 @@ not as a side effect of a version bump.
 
 Brief notes per work session — what got done, what decisions were made, what's blocked.
 
+### 2026-08-22 (later — two bugs from Daffa's manual review, fixed on the same PR)
+
+- **Real regression, caught by manual testing, not the automated suite:**
+  clicking a card's "read the article" link *from the articles index*
+  landed on a blank "Content missing" state instead of the show page, and
+  the URL bar/browser back button both behaved wrong. Root cause: cards on
+  `/articles` live inside `turbo_frame_tag "articles"` (needed for the
+  filter tabs), so Turbo scoped the card's link click to that frame instead
+  of doing a normal page visit — it fetched the show page looking for a
+  matching `#articles` frame in the response, found none, and rendered
+  Turbo's own "Content missing" placeholder. Frame-scoped navigations don't
+  touch browser history either, which is why the address bar stayed on
+  `/articles` and "back" skipped straight to the last *real* page visit.
+  Fixed with `data-turbo-frame="_top"` on the card's stretched link, plus a
+  regression test asserting that attribute is present. Cards on the landing
+  page were never affected (no enclosing frame there), which is exactly why
+  this didn't surface until testing the index page specifically.
+- **Minor spacing bug, also from manual review:** the show page's
+  "← All articles" link and "CASE STUDY" badge rendered on the same line,
+  nearly touching. Cause: both were inline-level elements with no
+  block-level wrapper between them, so their `mb-*` margins were silently
+  ignored — vertical margin has no layout effect on inline boxes sharing a
+  line. Fixed by wrapping each in its own block-level `div`, matching the
+  design export's actual structure (its badge is already inside a `<div>`,
+  which is *why* it doesn't hit this in the reference HTML).
+- 73 -> 74 tests (added the turbo-frame regression test). Still 0 rubocop
+  offenses, 0 brakeman warnings.
+
 ### 2026-08-22 — public articles pages (Batch 2 complete)
 
 - Built the entire public-facing remainder of Batch 2 in one PR:

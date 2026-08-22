@@ -11,11 +11,21 @@
 
 <article class="bg-white pt-24 pb-24">
   <div class="max-w-[680px] mx-auto px-6">
-    <%= link_to "&larr; All articles".html_safe, articles_path, class: "inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors mb-8" %>
+    <%#
+      Both of these need their own block-level wrapper: an inline/inline-flex
+      element with a vertical margin does nothing when the next sibling is
+      also inline — they just sit side by side and the margin is ignored.
+      A block-level div around each forces the line break the design intends.
+    %>
+    <div class="mb-8">
+      <%= link_to "&larr; All articles".html_safe, articles_path, class: "inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors" %>
+    </div>
 
-    <span class="inline-block px-3 py-1.5 bg-gray-900 text-white rounded-full text-xs font-semibold tracking-widest mb-4">
-      <%= @article.article_type.titleize.upcase %>
-    </span>
+    <div class="mb-4">
+      <span class="inline-block px-3 py-1.5 bg-gray-900 text-white rounded-full text-xs font-semibold tracking-widest">
+        <%= @article.article_type.titleize.upcase %>
+      </span>
+    </div>
 
     <h1 class="text-4xl md:text-[44px] font-bold leading-tight tracking-tight text-gray-900 mb-4"><%= @article.title %></h1>
 

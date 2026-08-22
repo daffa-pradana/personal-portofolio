@@ -14,8 +14,20 @@
                 transition duration-200
                 hover:-translate-y-1 hover:border-gray-300 hover:shadow-xl
                 has-[.card-cta:hover]:translate-y-0 has-[.card-cta:hover]:border-gray-200 has-[.card-cta:hover]:shadow-md">
+  <%#
+    data-turbo-frame="_top": on the articles index this card sits inside
+    turbo_frame_tag "articles" (for the filter tabs). Without this, Turbo
+    treats the click as scoped to that frame, fetches the show page looking
+    for a matching #articles frame in it (there isn't one), and renders
+    "Content missing" instead of navigating — the URL bar doesn't even
+    change, since frame navigations don't touch browser history. Forcing
+    _top makes this a normal, full top-level visit everywhere the card is
+    used, landing page included (harmless no-op there, since it's not
+    inside any frame to begin with).
+  %>
   <%= link_to article_path(article),
         class: "absolute inset-0 z-[1] rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-gray-900",
+        data: { turbo_frame: "_top" },
         aria: { label: "Read the #{article.case_study? ? "case study" : "article"}: #{article.title}" } do %>
   <% end %>
 
