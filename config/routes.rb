@@ -3,6 +3,9 @@ Rails.application.routes.draw do
   resources :passwords, param: :token
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
+  # :slug used as the param (not :id) — see Article#to_param.
+  resources :articles, only: [ :index, :show ], param: :slug
+
   # Admin CMS. Article#to_param returns the slug (see app/models/article.rb),
   # so `param: :slug` here just makes the route param name match what's
   # actually in the URL — without it the segment is still a slug, but the

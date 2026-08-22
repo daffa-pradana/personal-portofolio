@@ -1,0 +1,92 @@
+<%#
+  Shared card partial — stretched-link pattern (see docs/design/README.md).
+  Used on the landing page's "My Latest Projects" section AND the articles
+  index. The whole card is a real <a href> (via the absolutely-positioned
+  overlay below), so ⌘-click/middle-click work with no JS. The optional CTA
+  button sits at a higher z-index so it intercepts its own clicks first.
+
+  show_meta: true on the articles index (type · reading time · date line),
+  false on the landing page — the design export deliberately omits that line
+  there (see docs/design/README.md's "Decisions I made" section).
+%>
+<% show_meta = local_assigns.fetch(:show_meta, true) %>
+<article class="group relative flex flex-col bg-white border border-gray-200 rounded-xl shadow-sm
+                transition duration-200
+                hover:-translate-y-1 hover:border-gray-300 hover:shadow-xl
+                has-[.card-cta:hover]:translate-y-0 has-[.card-cta:hover]:border-gray-200 has-[.card-cta:hover]:shadow-md">
+  <%#
+    data-turbo-frame="_top": on the articles index this card sits inside
+    turbo_frame_tag "articles" (for the filter tabs). Without this, Turbo
+    treats the click as scoped to that frame, fetches the show page looking
+    for a matching #articles frame in it (there isn't one), and renders
+    "Content missing" instead of navigating — the URL bar doesn't even
+    change, since frame navigations don't touch browser history. Forcing
+    _top makes this a normal, full top-level visit everywhere the card is
+    used, landing page included (harmless no-op there, since it's not
+    inside any frame to begin with).
+  %>
+  <%= link_to article_path(article),
+        class: "absolute inset-0 z-[1] rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-gray-900",
+        data: { turbo_frame: "_top" },
+        aria: { label: "Read the #{article.case_study? ? "case study" : "article"}: #{article.title}" } do %>
+  <% end %>
+
+  <div class="relative aspect-[16/10] rounded-t-xl overflow-hidden bg-gray-100 flex items-center justify-center">
+    <% if article.cover_image.attached? %>
+      <%= image_tag article.cover_image, alt: article.title, class: "h-full w-full object-cover" %>
+    <% else %>
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    <% end %>
+
+    <span class="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-900/95 text-white rounded-full text-xs font-semibold
+                 opacity-0 -translate-y-1.5 transition duration-200
+                 group-hover:opacity-100 group-hover:translate-y-0
+                 group-has-[.card-cta:hover]:opacity-25">
+      Read <%= article.case_study? ? "case study" : "article" %> &rarr;
+    </span>
+  </div>
+
+  <div class="flex flex-col gap-2.5 p-5">
+    <% if show_meta %>
+      <div class="flex items-center gap-2 text-xs font-semibold tracking-widest text-gray-400">
+        <span><%= article.article_type.titleize.upcase %></span>
+        <span class="text-gray-200 font-normal">|</span>
+        <span class="font-medium tracking-normal text-xs">
+          <%= [ ("#{article.reading_time} min read" if article.reading_time), article.published_at&.strftime("%b %Y") ].compact.join(" · ") %>
+        </span>
+      </div>
+    <% end %>
+
+    <h3 class="m-0 text-base font-bold leading-snug text-gray-900 underline decoration-transparent decoration-2 underline-offset-[3px]
+               transition-[text-decoration-color] duration-200
+               group-hover:decoration-gray-900 group-has-[.card-cta:hover]:decoration-transparent">
+      <%= article.title %>
+    </h3>
+
+    <% if article.subtitle.present? %>
+      <p class="m-0 text-sm leading-relaxed text-gray-500 line-clamp-2"><%= article.subtitle %></p>
+    <% end %>
+
+    <% if article.tags.present? %>
+      <div class="flex flex-wrap gap-1.5 mt-0.5 pointer-events-none">
+        <% article.tags.each do |tag| %>
+          <span class="px-2.5 py-1 bg-gray-100 text-gray-600 rounded-md text-xs font-medium"><%= tag %></span>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if article.button_label.present? && article.button_url.present? %>
+      <% scroll_link = article.button_url.start_with?("#") %>
+      <div class="flex mt-1.5">
+        <%= link_to article.button_url,
+              class: "card-cta relative z-[2] inline-flex items-center gap-1.5 px-3.5 py-2 bg-gray-900 hover:bg-black text-white rounded-full text-xs font-semibold no-underline transition duration-150",
+              data: (scroll_link ? { turbo: false } : {}),
+              **(scroll_link ? {} : { target: "_blank", rel: "noopener noreferrer" }) do %>
+          <%= article.button_label %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</article>
