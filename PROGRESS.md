@@ -312,6 +312,51 @@ otherwise the bot itself would eventually tell visitors something false.
 - [ ] GitHub Actions CI pipeline
 - [ ] Custom domain + SSL on Railway
 - [ ] Final responsive QA across devices
+- [ ] **Trim the chat's prompt cost (deferred deliberately — see below).**
+      Retrieval currently sends the entire knowledge base on every question.
+      Intended fix: cap at roughly the top 6 entries by score, but with a
+      floor that always includes the `contact` entry, so it recovers most of
+      the tokens without reintroducing the starvation bug that made sending
+      everything necessary in the first place. Not urgent: the current cost
+      is free-tier-safe, just with a thinner margin.
+
+### Chat token cost — measured, and why it is on the deferred list
+
+Measured 2026-08-23 after the knowledge base rewrite, because the two
+changes that landed together had very different cost profiles and it was
+worth knowing which one mattered:
+
+| Scenario | Avg input tokens/question |
+|---|---|
+| Original design (8 entries, scoring filters) | 352 |
+| Knowledge base rewrite alone (13 entries, still filtering) | 432 (+23%) |
+| **Shipping now** (13 entries, scoring only orders) | **1,439 (+309%)** |
+
+So only ~7% of the rise came from the content growing; ~93% came from
+switching scoring to order-not-filter. That was a deliberate trade — it
+fixed real starvation, where "is he any good?" was answered from a single
+entry — but the cost was quoted at the time as "negligible" without
+checking it against the actual quota. It is not negligible relative to the
+free tier, just affordable.
+
+Groq free tier for `openai/gpt-oss-120b`: **8K tokens/min, 200K tokens/day,
+30 req/min, 1K req/day.** At ~1,589 tokens per question including a typical
+2–4 sentence answer:
+
+- ~**5** questions/minute before TPM caps (was ~16)
+- ~**126** questions/day before TPD caps (was ~398)
+- **TPM is the binding limit, not request count** — the 30 req/min allowance
+  is unreachable, so a few simultaneous visitors can trigger 429s. Handled
+  gracefully, but they see the limit message.
+- With the app's 20 questions/hour/IP cap, a single determined visitor can
+  drain the daily token quota in ~6 hours (was ~20).
+
+Switching to `gpt-oss-20b` does **not** help — identical free-tier limits.
+Trimming entry verbosity would (entries average 59 words).
+
+Verdict: still free, no billing risk, and 126 questions/day is plenty for a
+personal site. The scenario that would actually bite is demoing the site to
+several people at once. Revisit after the current batches.
 
 ## Batch 5 (Optional/Future)
 
