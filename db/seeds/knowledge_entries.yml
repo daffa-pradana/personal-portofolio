@@ -1,89 +1,148 @@
-# RAG context for the AI chat. Every fact here is drawn from content already
-# in this repo (app/views/pages/_about.html.erb, _contacts.html.erb,
-# db/seeds/articles.yml) — nothing is invented. The chat's system prompt
-# forbids making things up, so gaps are better than guesses.
+# Knowledge base for the portfolio AI chat.
 #
-# NOTE: there is deliberately no "education" entry. CLAUDE.md lists education
-# as an expected category, but no education facts exist anywhere in the repo,
-# and inventing them is not an option. Add one here when Daffa supplies the
-# real details.
+# Every entry here is recited to visitors verbatim-ish by the LLM, so:
+#   - keep it factual — the system prompt tells the model not to invent, but it
+#     can only be as accurate as what it is grounded in
+#   - keep it public-safe — no client names, no internal architecture detail
+#   - keep it current — stale copy here becomes the bot confidently lying
+#
+# Content is written third-person ("Daffa"), matching how visitors ask
+# ("how can I contact him?").
 
-- category: "experience"
-  title: "Professional experience and current role"
-  content: >
-    Daffa Pradana is a seasoned backend engineer with 4 years of professional
-    experience, specializing in Ruby on Rails. He currently works at Happy5
-    (happy5.co), where he builds features for their OKR and performance
-    management platform. Before his professional career he honed his skills
-    through a brief web programming internship and freelance projects.
-  position: 1
+# --- Who he is ----------------------------------------------------------------
 
-- category: "skills"
-  title: "Tech stack and core skills"
+- category: about
+  title: Who Daffa is
   content: >
-    Daffa's primary language is Ruby and his core framework is Ruby on Rails.
-    His main stack is Ruby on Rails, PostgreSQL, Redis and Sidekiq, with some
-    familiarity with Kubernetes on GKE. He also works with CI/CD via CircleCI,
-    error tracing with Sentry, testing with RSpec, and data querying with
-    Redash. He describes himself as a fast learner with a growing AI focus and
-    the flexibility to contribute across the full stack when needed.
-  position: 2
+    Daffa Pradana is a backend engineer with five years of production
+    experience, based in Indonesia. He works primarily in Ruby on Rails and
+    PostgreSQL, building and operating B2B SaaS systems for enterprise
+    clients. His focus is the parts of a system most users never see:
+    performance, data integrity, and keeping things running when they break.
 
-- category: "experience"
-  title: "Engineering strengths and measurable impact"
+- category: about
+  title: How he works
   content: >
-    Daffa excels at performance optimization — he has cut response times by
-    85% and architected asynchronous background jobs to eliminate N+1 query
-    bottlenecks. He builds robust third-party integrations that have directly
-    contributed to contract renewals and new deals, and has delivered
-    data-driven features that grew a product's user base from 150 to 1,574
-    users.
-  position: 3
+    Daffa does his best work on problems that reward digging — tracing why a
+    system is slow, why a job silently failed, why a query that looked fine
+    falls over under real traffic. He tends to measure before optimising and
+    verify before assuming, and he prefers fixing a root cause over patching a
+    symptom.
 
-- category: "projects"
-  title: "Happy5 Jira Project Integration"
-  content: >
-    A two-way integration between Happy5 and Jira that lets teams sync OKR
-    tasks with Jira issues. It reduced context-switching and improved project
-    tracking adoption across enterprise clients. Built with Ruby on Rails, the
-    Jira REST API, Sidekiq and PostgreSQL.
-  position: 4
+# --- Experience ---------------------------------------------------------------
 
-- category: "projects"
-  title: "Happy5 Goal Custom Order"
+- category: experience
+  title: Backend Engineer at Happy5 (2021 to present)
   content: >
-    A drag-to-reorder feature for OKR goals, letting users prioritize their
-    objectives in their own order. Daffa eliminated N+1 queries in the
-    reordering pipeline and cut response time by 85%. Built with Ruby on
-    Rails, PostgreSQL and Sidekiq.
-  position: 5
+    Since July 2021 Daffa has been a backend engineer at Happy5, an
+    ISO 27001-certified B2B SaaS platform for OKRs, project management, and
+    performance reviews, serving enterprise clients including major Indonesian
+    banks. He designs and ships backend features end to end on Rails,
+    PostgreSQL, and Redis, deployed on Google Kubernetes Engine — from
+    technical spec through production and post-launch reliability. He also
+    mentors other engineers, runs code reviews, and leads engineering
+    onboarding for new hires.
 
-- category: "projects"
-  title: "RAG AI Chatbot on this portfolio"
+- category: experience
+  title: Earlier roles and how he started
   content: >
-    A Retrieval-Augmented Generation chatbot built on top of a personal
-    knowledge base, served through the Groq API. It is deployed as a
-    feature of this portfolio site, with session-based rate limiting and
-    Hotwire Turbo Streams for the live chat feel. This is the assistant you
-    are talking to right now.
-  position: 6
+    Daffa started out freelancing, taking on PHP and JavaScript projects to
+    build real-world experience. He then moved into more structured roles: a
+    web programming internship at Merck Indonesia in 2020, building internal
+    tools for operations and data management, followed by a short stint at
+    4Life Indonesia in early 2021 building responsive product pages in
+    JavaScript and React.
 
-- category: "projects"
-  title: "This portfolio website"
-  content: >
-    Daffa rebuilt his personal portfolio from a Vue single-page app into a
-    Rails 8 fullstack application, specifically to showcase his Rails
-    expertise. It uses Hotwire (Turbo and Stimulus), Tailwind CSS, PostgreSQL,
-    the Solid Stack (Solid Queue, Solid Cache, Solid Cable), Action Text for
-    the article CMS, and Rails 8's built-in authentication for the admin area.
-  position: 7
+# --- Education ----------------------------------------------------------------
 
-- category: "personal"
-  title: "How to contact Daffa"
+- category: education
+  title: Education
   content: >
-    The best ways to reach Daffa are email at daffaarravi@gmail.com, LinkedIn
-    at linkedin.com/in/daffaarravi, and GitHub at github.com/daffa-pradana.
-    He is based in Depok, Indonesia, and is always open to a good
-    conversation. For detailed inquiries, reaching out directly is the fastest
-    route.
-  position: 8
+    Daffa holds a Bachelor of Engineering in Information Technology from
+    Gunadarma University, graduating in September 2020. He was already working
+    professionally before finishing the degree, starting with his internship at
+    Merck Indonesia, and moved into full-time backend engineering the
+    following year.
+
+# --- What he actually did -----------------------------------------------------
+
+- category: highlights
+  title: Performance and query optimisation
+  content: >
+    Daffa took a critical production endpoint from roughly 44 seconds down to
+    sub-second. He found the cause with APM tracing and query profiling rather
+    than guessing, then fixed it properly: eliminating N+1 patterns through
+    association preloading, adding targeted indexes, and introducing Redis
+    caching with correct invalidation on high-frequency queries. Separately, he
+    improved response time across high-traffic endpoints by around 85%.
+
+- category: highlights
+  title: Incident response and post-mortem work
+  content: >
+    Daffa led the response to a production P1 where a sync job had been
+    silently failing for three days, blocking thousands of employees from work
+    they needed. He root-caused it, shipped the fix, and — rather than assuming
+    the fix was sound — built a custom benchmarking harness to validate a
+    parallelisation refactor before rollout. The result was roughly 57% faster
+    with zero regression.
+
+- category: highlights
+  title: Integrations and product impact
+  content: >
+    Daffa architected and built a bi-directional Jira integration, designing
+    the API contract and data-sync logic, which contributed to two contract
+    renewals and one new contract. He also developed a product feature that
+    grew platform users tenfold, and cut CI/CD pipeline cost and runtime by
+    optimising test suite parallelisation on CircleCI.
+
+# --- Skills -------------------------------------------------------------------
+
+- category: skills
+  title: Core tech stack
+  content: >
+    Daffa's primary stack is Ruby on Rails with PostgreSQL and Redis. He works
+    daily with RESTful API design, database schema and index design, query
+    profiling with EXPLAIN ANALYZE, background job processing via Sidekiq, and
+    RSpec for test coverage. He also writes JavaScript, and has earlier
+    hands-on experience with PHP and React.
+
+- category: skills
+  title: Infrastructure and reliability
+  content: >
+    On the infrastructure side Daffa works with Google Kubernetes Engine,
+    Docker, AWS S3, and CircleCI for CI/CD. For observability and reliability
+    he uses APM profiling, Sentry for error monitoring, Redash for data
+    queries, and custom benchmarking when off-the-shelf tooling does not answer
+    the question.
+
+- category: skills
+  title: AI-assisted development
+  content: >
+    Daffa uses Claude Code as part of his daily engineering workflow, and has
+    built and maintained his own MCP (Model Context Protocol) integrations to
+    connect it to the tools he actually uses. He treats AI-generated code the
+    same as any other code — read, understood, and either defended or
+    overridden before it ships.
+
+# --- This site ----------------------------------------------------------------
+
+- category: projects
+  title: This portfolio site and its AI chat
+  content: >
+    This site is a Rails 8 application Daffa built himself, using Hotwire
+    (Turbo and Stimulus) and PostgreSQL. The chat you are using is a retrieval
+    augmented generation setup: your question is matched against a curated
+    knowledge base, and the relevant entries are passed as grounding context to
+    a language model through the Groq API. It is deliberately
+    provider-agnostic, speaking the generic OpenAI-compatible contract so the
+    model or provider can be swapped through configuration rather than a
+    rewrite.
+
+# --- Contact ------------------------------------------------------------------
+
+- category: contact
+  title: How to get in touch
+  content: >
+    The best way to reach Daffa is by email at daffaarravi@gmail.com. He is
+    also on LinkedIn at linkedin.com/in/daffaarravi and GitHub at
+    github.com/daffa-pradana.
