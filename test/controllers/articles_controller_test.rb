@@ -84,4 +84,24 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "a[href=?]", articles(:jira_integration).button_url, text: articles(:jira_integration).button_label
   end
+
+  # An anchor CTA (the RAG case study ships "#chat") has to point back at the
+  # landing page: there is no #chat section on an article page, so a bare
+  # "#chat" href would be a dead link.
+  test "show points an anchor CTA back at the landing page" do
+    article = articles(:jira_integration)
+    article.update!(button_label: "Try Here!", button_url: "#chat")
+
+    get article_path(article)
+
+    assert_select "a[href=?]", "/#chat", text: "Try Here!"
+  end
+
+  test "index points an anchor CTA back at the landing page" do
+    articles(:jira_integration).update!(button_label: "Try Here!", button_url: "#chat")
+
+    get articles_path
+
+    assert_select "turbo-frame#articles a[href=?]", "/#chat", text: "Try Here!"
+  end
 end

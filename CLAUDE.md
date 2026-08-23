@@ -23,7 +23,7 @@ Personal portfolio website for **Daffa Pradana**, a Seasoned Backend Engineer sp
 | Auth | Rails 8 built-in authentication | `bin/rails generate authentication` |
 | Rich Text | Action Text (Trix editor) | For blog CMS |
 | File Upload | Active Storage | For images |
-| AI Chat LLM | Groq API (Llama 3.3 70B) | Free tier, OpenAI-compatible |
+| AI Chat LLM | Groq API (`openai/gpt-oss-120b`) | Free tier, OpenAI-compatible; model is swappable via `LLM_MODEL` |
 | Deployment | Railway | Hobby plan ($5/mo) |
 | CI/CD | GitHub Actions | Auto-deploy on merge to main |
 
@@ -225,8 +225,16 @@ value:text
 # GROQ_API_KEY=gsk_xxxxxxxxxxxx
 
 # API endpoint: https://api.groq.com/openai/v1/chat/completions
-# Model: llama-3.3-70b-versatile
-# Format: OpenAI-compatible (use ruby-openai gem or net/http)
+# Model: openai/gpt-oss-120b  (override with LLM_MODEL; see note below)
+# Format: OpenAI-compatible (implemented with net/http, no gem)
+#
+# Model names are NOT stable. Groq retired `llama-3.3-70b-versatile`, which
+# this file originally specified, and now returns HTTP 404 for it. Before
+# assuming the chat is broken, list what the key can actually use:
+#   curl -H "Authorization: Bearer $GROQ_API_KEY" \
+#        https://api.groq.com/openai/v1/models
+# ChatService reads LLM_BASE_URL/LLM_MODEL from the environment, so switching
+# model or provider is config, not code.
 ```
 
 ### System Prompt (for Groq)
@@ -439,7 +447,9 @@ railway run bin/rails console       # Remote console
 - **No Redis** — Solid Stack replaces Redis for queue, cache, and cable
 - **No custom webpack/esbuild** — use Importmap
 - **Single PostgreSQL** — app data + Solid Stack all in one database
-- **Groq API** — OpenAI-compatible format, model: `llama-3.3-70b-versatile`
+- **Groq API** — OpenAI-compatible format. Default model `openai/gpt-oss-120b`,
+  overridable via `LLM_MODEL`. Model names get retired — verify against
+  `/v1/models` rather than trusting this file
 - **No separate Project model** — project case studies are `Article` records with
   `article_type: case_study`. Do not create a `Project` model/controller/table.
 - **Card stretched-link pattern** — required for project/article cards where the

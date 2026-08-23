@@ -14,8 +14,13 @@
 # `update_existing: false` only creates rows that are missing and leaves
 # existing ones untouched. Use it for anything a human edits through the admin
 # UI — re-seeding must not silently revert their changes.
-def seed_from_yaml(model, filename, find_by:, update_existing: true)
+#
+# `prune: true` also deletes rows whose `find_by` value is absent from the
+# YAML, making the file the single source of truth rather than an append-only
+# feed. Only safe when nothing else writes to the table — see the call sites.
+def seed_from_yaml(model, filename, find_by:, update_existing: true, prune: false)
   records = YAML.load_file(Rails.root.join("db/seeds", filename))
+
   records.each do |attrs|
     record = model.find_or_initialize_by(find_by => attrs[find_by.to_s])
     next if record.persisted? && !update_existing
@@ -23,9 +28,30 @@ def seed_from_yaml(model, filename, find_by:, update_existing: true)
     record.assign_attributes(attrs)
     record.save!
   end
+
+  return unless prune
+
+  stale = model.where.not(find_by => records.map { |attrs| attrs[find_by.to_s] })
+  return if stale.none?
+
+  # Deleting seed data is worth announcing rather than doing silently.
+  puts "Pruned #{stale.count} #{model.name.underscore.humanize.downcase} row(s) " \
+       "no longer in #{filename}: #{stale.pluck(find_by).join(", ")}"
+  stale.destroy_all
 end
 
 seed_from_yaml(Article, "articles.yml", find_by: :slug)
+
+# The knowledge base is what the AI chat recites to visitors, so the YAML is
+# the single source of truth and seeding prunes anything not in it. Without
+# that, rewording an entry's title orphans the old row instead of updating it,
+# and the model ends up grounded in both versions at once — which is exactly
+# how the bot starts contradicting itself about basic facts.
+#
+# Revisit if Batch 4 adds admin CRUD for knowledge entries: at that point rows
+# could legitimately originate outside this file, and pruning would delete
+# them. A stable key column (as Article uses `slug`) would be the fix.
+seed_from_yaml(KnowledgeEntry, "knowledge_entries.yml", find_by: :title, prune: true)
 
 # Site settings are edited through the admin UI, so seeding only ever creates
 # the missing keys with their defaults — it never overwrites a value Daffa set.
