@@ -7,16 +7,21 @@
 > in full each time.
 
 **Last updated:** 2026-08-16
-**Current focus:** Batch 2 is complete (pending PR merge). Next up is Batch 3
-— the RAG AI chatbot (KnowledgeEntry model, ChatService/Groq, ChatsController).
+**Current focus:** Batch 3 (RAG AI chatbot) is scaffolded end to end and
+tested. It needs a real `GROQ_API_KEY` to actually answer, and a manual
+click-through, before it can be called done.
 
 ---
 
 ## 🚨 Action Needed First
 
-- [ ] **Nothing blocking.** Next up is Batch 3: `KnowledgeEntry` model,
-      `ChatService` (Groq API integration), `ChatsController` with rate
-      limiting, chat UI via Turbo Streams.
+- [ ] **Set `GROQ_API_KEY` to make the chat answer anything.** Get a free key
+      at console.groq.com (no card required), then run the dev server with
+      it: `GROQ_API_KEY=gsk_... bin/dev`. Without it the UI correctly shows
+      "The AI assistant is temporarily unavailable."
+- [ ] Manual click-through of the chat still outstanding — suggested-question
+      buttons, typing indicator, scroll-to-newest, and the session limit
+      after 10 questions.
 - [ ] Create a local admin user before using the CMS:
       `ADMIN_EMAIL=... ADMIN_PASSWORD=... bin/rails db:seed`
 - [x] ~~CI red on `main`~~ — fixed by PR #30 (Ruby 3.4.7 + Rails 8.1.3.1),
@@ -190,13 +195,67 @@ not as a side effect of a version bump.
 
 ## Batch 3: RAG AI Chatbot
 
-- [ ] `KnowledgeEntry` model + migration
-- [ ] `ChatService` (Groq API integration)
-- [ ] `ChatsController` with rate limiting (10/session, 20/hour/IP)
-- [ ] Chat UI with Turbo Streams + Stimulus
-- [ ] Suggested question buttons, typing indicator
-- [ ] Graceful denial messages (rate limit hit, Groq unavailable)
-- [ ] Seed knowledge entries about Daffa
+- [x] `KnowledgeEntry` model + migration — `category`/`title`/`content`/
+      `position`, with an `ordered` scope that sorts `position ASC NULLS
+      LAST` (Postgres puts NULLs first on ASC by default, which would rank
+      uncurated entries above curated ones).
+- [x] `ChatService` — built against the **generic OpenAI-compatible
+      `/chat/completions` contract**, not a Groq SDK, so the provider can be
+      swapped via `LLM_BASE_URL`/`LLM_MODEL` env vars without a rewrite.
+      Groq remains the default. Takes an injectable `transport:` callable —
+      that's the seam the contract tests use instead of a mocking gem.
+      Raises only `ChatService::RateLimited` / `ChatService::Unavailable`;
+      every network error, non-200 and malformed body collapses into those.
+- [x] `ChatsController` with rate limiting (10/session, 20/hour/IP) —
+      per-session cap implemented here, per-IP via Rails 8's built-in
+      `rate_limit` (Solid Cache backed).
+- [x] Chat UI with Turbo Streams + Stimulus — a plain Turbo form POST
+      answered with two `turbo_stream.append`s (the visitor's question and
+      the answer), so no message is ever rendered client-side.
+- [x] Suggested question buttons, typing indicator — indicator toggled off
+      `turbo:submit-start`/`turbo:submit-end`; a MutationObserver keeps the
+      transcript scrolled to the newest message.
+- [x] Graceful denial messages (rate limit hit, provider unavailable) —
+      verbatim from CLAUDE.md. Provider error detail goes to the Rails log
+      only; tests assert the raw text never reaches the response body.
+- [x] Seed knowledge entries about Daffa — 8 entries in
+      `db/seeds/knowledge_entries.yml`, drawn only from facts already in the
+      repo.
+  - [ ] **No `education` entry exists.** CLAUDE.md lists education as an
+        expected category, but no education facts appear anywhere in the
+        repo and inventing them isn't an option. Add one when Daffa supplies
+        the real details.
+- [ ] **Needs a real `GROQ_API_KEY` to answer anything.** Without it
+      `ChatService` raises `Unavailable` and the UI shows the "temporarily
+      unavailable" message — which is correct, tested behaviour, but means
+      the feature is inert until the key is set.
+
+### The provider contract ChatService implements
+
+Researched against Groq's live API reference rather than assumed:
+
+```
+POST {base_url}/chat/completions
+Authorization: Bearer <api_key>
+Content-Type: application/json
+
+->  { "model": "...", "messages": [{ "role": "system"|"user", "content": "..." }],
+      "temperature": 0.3, "max_completion_tokens": 500 }
+
+<-  200 { "choices": [{ "index": 0,
+                        "message": { "role": "assistant", "content": "..." },
+                        "finish_reason": "stop" }],
+          "usage": { "prompt_tokens": N, "completion_tokens": N, "total_tokens": N } }
+
+<-  4xx/5xx { "error": { "message": "...", "type": "..." } }
+```
+
+Status codes that matter: **429** rate limited (carries `retry-after`;
+mapped to `RateLimited`), **401** bad key, **500/502/503** provider-side,
+**413/422** request rejected — all mapped to `Unavailable`.
+
+Two details worth keeping: the field is **`max_completion_tokens`**, not the
+deprecated `max_tokens`; and Groq does not charge for 5xx responses.
 
 ## Batch 4: Polish & Production
 
@@ -229,6 +288,62 @@ not as a side effect of a version bump.
 ## Session Log
 
 Brief notes per work session — what got done, what decisions were made, what's blocked.
+
+### 2026-08-23 — Batch 3 scaffolded (RAG AI chatbot)
+
+- **Researched the provider contract instead of assuming it** — see "The
+  provider contract ChatService implements" above for the full request/
+  response/error shape. Two things the research changed: the current field
+  name is `max_completion_tokens` (not the deprecated `max_tokens`), and the
+  documented error envelope is `{"error": {"message", "type"}}`, which is
+  what `ChatService` parses for its log messages.
+- **Built provider-agnostic on purpose**, per Daffa's requirement to stay
+  free/near-free and keep the option to switch: `ChatService` speaks the
+  generic OpenAI-compatible dialect, with `LLM_BASE_URL`/`LLM_MODEL` env
+  overrides. Groq stays the default (free tier, no card, fast). Swapping to
+  OpenRouter/Together/Cerebras/Gemini-compat is a config change.
+- **Contract tests use dependency injection, not a mocking gem.** The Gemfile
+  has no webmock/VCR and adding one for this wasn't warranted, so
+  `ChatService` takes a `transport:` callable — `(uri, body, headers) ->
+  [status, body]`. Tests inject a recorder that both captures the outgoing
+  request (asserting the request half of the contract) and returns canned
+  responses (asserting the response half): 200, 429, 401, 500/502/503,
+  non-JSON error body, non-JSON 200 body, empty choices, blank content.
+- **The injected-transport tests would have left the shipped `Net::HTTP`
+  path completely uncovered**, so three more tests stub `Net::HTTP.start`
+  and exercise the real transport — including that all six network failure
+  classes (`Timeout::Error`, `ECONNREFUSED`, `ECONNRESET`, `SocketError`,
+  `SSLError`, `IOError`) collapse into `Unavailable` rather than escaping as
+  themselves. `minitest/mock` has to be required explicitly; it isn't loaded
+  by default in this app's test env.
+- **Found that the per-IP `rate_limit` cannot be behaviourally tested here.**
+  Rails resolves the limiter's backing store when the controller class
+  loads, and `config/environments/test.rb` sets `:null_store`, whose
+  `increment` returns `nil` — so the limiter never fires under test no matter
+  how many requests are made. Documented in the test file rather than
+  faked; the session-scoped limit (this app's own code) is fully tested.
+- **Fixed an adjacent dead link that Batch 3 made user-visible.** The RAG
+  case study seeds `button_url: "#chat"`, but that CTA also renders on
+  `/articles` and `/articles/:slug`, where no `#chat` section exists — so
+  the documented "Try Here!" route into the chat went nowhere. Extracted
+  `article_cta_url`/`article_cta_link_options` into `ArticlesHelper` (the
+  logic was duplicated across the card partial and the show page anyway) and
+  resolved anchors against `root_path(anchor:)`, matching what the navbar and
+  footer already do.
+- **Knowledge entries contain only facts already in the repo** (about
+  section, article seeds, contacts). No `education` entry exists because no
+  education facts do — flagged in the checklist rather than invented.
+  Retrieval spot-checked against the real seeded data: "tech stack" →
+  Tech stack entry, "how can I contact him" → contact entry, "Jira
+  integration" → the Jira case study, and an off-topic question falls back
+  to full context (which the system prompt then declines).
+- **A migration gotcha worth remembering:** the first `db:migrate` ran the
+  generator's *empty* migration body, creating `knowledge_entries` with only
+  `id`/timestamps. `db:rollback` then failed, because the down-migration
+  tried to remove indexes that run had never created. Recovered by dropping
+  the (empty) table, deleting its `schema_migrations` row, and re-running.
+  Verified the table had 0 rows first.
+- 74 -> 131 tests, all green. 0 rubocop offenses, 0 brakeman warnings.
 
 ### 2026-08-22 (later — two bugs from Daffa's manual review, fixed on the same PR)
 

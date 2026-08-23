@@ -1,0 +1,89 @@
+# RAG context for the AI chat. Every fact here is drawn from content already
+# in this repo (app/views/pages/_about.html.erb, _contacts.html.erb,
+# db/seeds/articles.yml) — nothing is invented. The chat's system prompt
+# forbids making things up, so gaps are better than guesses.
+#
+# NOTE: there is deliberately no "education" entry. CLAUDE.md lists education
+# as an expected category, but no education facts exist anywhere in the repo,
+# and inventing them is not an option. Add one here when Daffa supplies the
+# real details.
+
+- category: "experience"
+  title: "Professional experience and current role"
+  content: >
+    Daffa Pradana is a seasoned backend engineer with 4 years of professional
+    experience, specializing in Ruby on Rails. He currently works at Happy5
+    (happy5.co), where he builds features for their OKR and performance
+    management platform. Before his professional career he honed his skills
+    through a brief web programming internship and freelance projects.
+  position: 1
+
+- category: "skills"
+  title: "Tech stack and core skills"
+  content: >
+    Daffa's primary language is Ruby and his core framework is Ruby on Rails.
+    His main stack is Ruby on Rails, PostgreSQL, Redis and Sidekiq, with some
+    familiarity with Kubernetes on GKE. He also works with CI/CD via CircleCI,
+    error tracing with Sentry, testing with RSpec, and data querying with
+    Redash. He describes himself as a fast learner with a growing AI focus and
+    the flexibility to contribute across the full stack when needed.
+  position: 2
+
+- category: "experience"
+  title: "Engineering strengths and measurable impact"
+  content: >
+    Daffa excels at performance optimization — he has cut response times by
+    85% and architected asynchronous background jobs to eliminate N+1 query
+    bottlenecks. He builds robust third-party integrations that have directly
+    contributed to contract renewals and new deals, and has delivered
+    data-driven features that grew a product's user base from 150 to 1,574
+    users.
+  position: 3
+
+- category: "projects"
+  title: "Happy5 Jira Project Integration"
+  content: >
+    A two-way integration between Happy5 and Jira that lets teams sync OKR
+    tasks with Jira issues. It reduced context-switching and improved project
+    tracking adoption across enterprise clients. Built with Ruby on Rails, the
+    Jira REST API, Sidekiq and PostgreSQL.
+  position: 4
+
+- category: "projects"
+  title: "Happy5 Goal Custom Order"
+  content: >
+    A drag-to-reorder feature for OKR goals, letting users prioritize their
+    objectives in their own order. Daffa eliminated N+1 queries in the
+    reordering pipeline and cut response time by 85%. Built with Ruby on
+    Rails, PostgreSQL and Sidekiq.
+  position: 5
+
+- category: "projects"
+  title: "RAG AI Chatbot on this portfolio"
+  content: >
+    A Retrieval-Augmented Generation chatbot built on top of a personal
+    knowledge base, using the Groq API with Llama 3.3 70B. It is deployed as a
+    feature of this portfolio site, with session-based rate limiting and
+    Hotwire Turbo Streams for the live chat feel. This is the assistant you
+    are talking to right now.
+  position: 6
+
+- category: "projects"
+  title: "This portfolio website"
+  content: >
+    Daffa rebuilt his personal portfolio from a Vue single-page app into a
+    Rails 8 fullstack application, specifically to showcase his Rails
+    expertise. It uses Hotwire (Turbo and Stimulus), Tailwind CSS, PostgreSQL,
+    the Solid Stack (Solid Queue, Solid Cache, Solid Cable), Action Text for
+    the article CMS, and Rails 8's built-in authentication for the admin area.
+  position: 7
+
+- category: "personal"
+  title: "How to contact Daffa"
+  content: >
+    The best ways to reach Daffa are email at daffaarravi@gmail.com, LinkedIn
+    at linkedin.com/in/daffaarravi, and GitHub at github.com/daffa-pradana.
+    He is based in Depok, Indonesia, and is always open to a good
+    conversation. For detailed inquiries, reaching out directly is the fastest
+    route.
+  position: 8

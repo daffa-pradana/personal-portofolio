@@ -78,12 +78,10 @@
     <% end %>
 
     <% if article.button_label.present? && article.button_url.present? %>
-      <% scroll_link = article.button_url.start_with?("#") %>
       <div class="flex mt-1.5">
-        <%= link_to article.button_url,
+        <%= link_to article_cta_url(article),
               class: "card-cta relative z-[2] inline-flex items-center gap-1.5 px-3.5 py-2 bg-gray-900 hover:bg-black text-white rounded-full text-xs font-semibold no-underline transition duration-150",
-              data: (scroll_link ? { turbo: false } : {}),
-              **(scroll_link ? {} : { target: "_blank", rel: "noopener noreferrer" }) do %>
+              **article_cta_link_options(article) do %>
           <%= article.button_label %>
         <% end %>
       </div>

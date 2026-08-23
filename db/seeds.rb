@@ -27,6 +27,8 @@ end
 
 seed_from_yaml(Article, "articles.yml", find_by: :slug)
 
+seed_from_yaml(KnowledgeEntry, "knowledge_entries.yml", find_by: :title)
+
 # Site settings are edited through the admin UI, so seeding only ever creates
 # the missing keys with their defaults — it never overwrites a value Daffa set.
 seed_from_yaml(SiteSetting, "site_settings.yml", find_by: :key, update_existing: false)

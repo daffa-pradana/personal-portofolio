@@ -1,0 +1,10 @@
+<%# Both bubbles land in one response — no client-side rendering needed. %>
+<% if @echo_question %>
+  <%= turbo_stream.append "chat-messages" do %>
+    <%= render "chats/message", role: :user, body: @question %>
+  <% end %>
+<% end %>
+
+<%= turbo_stream.append "chat-messages" do %>
+  <%= render "chats/message", role: :assistant, body: @answer %>
+<% end %>
