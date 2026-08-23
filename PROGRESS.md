@@ -336,6 +336,68 @@ otherwise the bot itself would eventually tell visitors something false.
 
 Brief notes per work session — what got done, what decisions were made, what's blocked.
 
+### 2026-08-23 (later — knowledge base rewrite, and three retrieval bugs it exposed)
+
+Daffa rewrote `db/seeds/knowledge_entries.yml` himself with current,
+authoritative information (8 entries -> 13, new categories, real education
+details, and specific achievements). Verifying it surfaced three problems,
+none of them in the file itself — all fixed in order:
+
+1. **Seeding was append-only, so the old rows survived.** `seed_from_yaml`
+   matches on `find_by:` and never deletes, and every title had been
+   reworded, so *zero* of 13 matched the existing 8. `db:seed` would have
+   left 21 entries, feeding the model "4 years of professional experience"
+   (old row) and "five years of production experience" (new entry) in the
+   same prompt — the bot contradicting itself on a basic fact.
+   Fixed with an opt-in `prune:` flag on `seed_from_yaml`, enabled for
+   knowledge entries only: the YAML is now the single source of truth and
+   seeding converges the table to it. Pruning announces what it deletes
+   rather than doing it silently. Deliberately *not* enabled for
+   `SiteSetting` (admin-editable — pruning could wipe values set through the
+   UI) or `Article`.
+   This is the same fragility already fixed for articles by moving to
+   `find_by: :slug`: titles are prose, prose gets reworded, so a title is a
+   poor identity key. Noted at the call site that Batch 4's planned admin
+   CRUD for knowledge entries would invalidate the prune assumption, and
+   that a stable key column is the real answer then.
+
+2. **`MAX_ENTRIES` was 8 while the base grew to 13.** The cap was set when
+   there happened to be exactly 8 entries, so it silently became a real
+   truncation. With `position` now absent from every entry the tail is just
+   insertion order, so the five dropped were all three `skills` entries, the
+   portfolio entry, and — last in the file — `contact`, the one thing the
+   system prompt explicitly tells the model to point visitors toward.
+   Measured before changing it: the entire knowledge base is ~770 words /
+   ~1,300 tokens, so truncation was never buying anything. Raised to 25 as a
+   runaway guard rather than a cost control, with a test that reads the real
+   seed file and fails if the shipped base ever outgrows the cap.
+
+3. **Scoring was filtering, not just ordering — and that was starving the
+   model.** Zero-scoring entries were rejected outright, and keyword overlap
+   between a short question and a short entry is sparse, so real questions
+   got almost no context: "What projects has Daffa worked on?" -> 2 of 13
+   entries, "is he any good?" -> 1, "why should I hire him" -> 2. Two of
+   those are the UI's own suggested questions. The shape was perverse — a
+   nonsense question matched nothing, hit the everything-fallback, and got
+   all 13, while a good question got one.
+   Since the whole base fits comfortably in context, scoring now *orders*
+   without filtering: every question receives the full base, best-ranked
+   first. Verified against the real data — all 13 entries and contact info
+   on every question, with sensible top hits ("tech stack" -> Core tech
+   stack, "contact" -> How to get in touch, "why should I hire him" -> the
+   Happy5 role).
+   Also removed a latent bug found while rewriting it: the old code relied
+   on `sort_by` being stable, which Ruby does not guarantee, so equal scores
+   could have reordered between identical requests. Position is now an
+   explicit tiebreaker.
+
+**Still open from this rewrite:** `_about.html.erb` says "4 years of
+professional experience" with a "4+" stat card, while the knowledge base now
+says five. The maths favours the knowledge base — July 2021 to now is 5.1
+years — so the landing page is the stale one. Not fixed here because it is
+site copy rather than a retrieval bug, and the chat section sits directly
+below that paragraph on the same page.
+
 ### 2026-08-23 — Batch 3 scaffolded (RAG AI chatbot)
 
 - **Researched the provider contract instead of assuming it** — see "The

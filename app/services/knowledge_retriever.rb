@@ -2,6 +2,18 @@
 # "simple keyword-based retrieval", not embeddings. The knowledge base is a
 # few dozen short entries about one person, so scoring beats similarity
 # search here — and it needs no extra service, gem, or vector column.
+#
+# Scoring ORDERS the entries; it does not filter them. That distinction is the
+# whole design. Filtering out zero-scoring entries seems obviously right and is
+# actively harmful at this scale: keyword overlap between a short question and
+# a short entry is sparse, so "What projects has Daffa worked on?" scored only
+# 2 of 13 entries and "is he any good?" scored 1 — starving the model of
+# context while a nonsense question, which matched nothing and hit the
+# everything-fallback, got all 13. The contact details were absent from almost
+# every prompt, even though the system prompt is told to point visitors there.
+#
+# Since the entire base is ~1,300 tokens (see MAX_ENTRIES), the cheap and
+# better answer is to send all of it, best-ranked first, and let the model pick.
 class KnowledgeRetriever
   # Words that would match nearly every entry and so carry no signal.
   STOP_WORDS = %w[
@@ -12,30 +24,46 @@ class KnowledgeRetriever
   # Anything shorter is noise ("is", "do") once stop words are removed.
   MIN_TERM_LENGTH = 3
 
-  # Caps how much context reaches the prompt. Groq's free tier bills by
-  # tokens, and a bloated prompt also dilutes the answer.
-  MAX_ENTRIES = 8
+  # Safety valve against an unbounded knowledge base, NOT a cost control.
+  #
+  # This was originally 8 — which silently became a real cap the moment the
+  # knowledge base grew past 8 entries, truncating the tail. Because entries
+  # carry no `position`, the tail is just insertion order, so the last entry
+  # in the YAML got dropped first: the contact details, which the system
+  # prompt explicitly tells the model to point visitors toward.
+  #
+  # Measured at 13 entries: the entire knowledge base is ~770 words / ~1,300
+  # tokens, and the full system prompt around it ~1,400. That is negligible
+  # for any current model, so there is no reason to truncate a person-scale
+  # knowledge base at all. This number exists only so the prompt can't grow
+  # without limit if the base ever balloons.
+  #
+  # knowledge_retriever_test.rb asserts this stays >= the shipped seed file's
+  # entry count, so outgrowing it fails loudly instead of silently degrading.
+  MAX_ENTRIES = 25
 
   def initialize(scope: KnowledgeEntry.all)
     @scope = scope
   end
 
-  # Returns the entries most likely to be relevant to `question`, best first.
-  # Falls back to everything (capped) when nothing matches, so the model
-  # always has *some* grounding rather than answering from thin air.
+  # Returns entries to ground the answer in, most relevant first, capped at
+  # MAX_ENTRIES. Never returns fewer than the whole base while it fits: the
+  # model always sees everything known about Daffa, ordered by relevance.
   def retrieve(question)
     entries = @scope.ordered.to_a
-    return entries.first(MAX_ENTRIES) if entries.empty?
+    return [] if entries.empty?
 
     terms = terms_in(question)
     return entries.first(MAX_ENTRIES) if terms.empty?
 
-    scored = entries.map { |entry| [ entry, score(entry, terms) ] }.reject { |_, s| s.zero? }
-    return entries.first(MAX_ENTRIES) if scored.empty?
-
-    # sort_by is stable in Ruby, so equal scores keep `ordered`'s position
-    # ordering rather than shuffling between requests.
-    scored.sort_by { |_, s| -s }.first(MAX_ENTRIES).map(&:first)
+    # Index is an explicit tiebreaker rather than a reliance on sort stability
+    # — Ruby does not guarantee sort_by is stable, so equal scores could
+    # otherwise reorder between identical requests. Falling back to `ordered`'s
+    # position keeps repeated questions deterministic.
+    entries.each_with_index
+           .sort_by { |entry, index| [ -score(entry, terms), index ] }
+           .first(MAX_ENTRIES)
+           .map(&:first)
   end
 
   private
