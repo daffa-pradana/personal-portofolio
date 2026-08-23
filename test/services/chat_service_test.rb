@@ -20,7 +20,7 @@ class ChatServiceTest < ActiveSupport::TestCase
       id: "chatcmpl-abc123",
       object: "chat.completion",
       created: 1_730_241_104,
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       choices: [
         {
           index: 0,
@@ -113,6 +113,28 @@ class ChatServiceTest < ActiveSupport::TestCase
 
     assert_equal "Bearer test-key", transport.headers["Authorization"]
     assert_equal "application/json", transport.headers["Content-Type"]
+  end
+
+  # LLM_MODEL is cleared explicitly: it's a documented .env override, so on a
+  # machine that sets it this would otherwise assert the wrong value.
+  test "falls back to the default model when none is configured" do
+    transport = RecordingTransport.new(response_body: success_body)
+
+    without_env("LLM_MODEL") do
+      ChatService.new(api_key: "k", retriever: StubRetriever.new, transport: transport).respond("What stack?")
+    end
+
+    assert_equal ChatService::DEFAULT_MODEL, transport.parsed_body["model"]
+  end
+
+  test "falls back to the default base url when none is configured" do
+    transport = RecordingTransport.new(response_body: success_body)
+
+    without_env("LLM_BASE_URL") do
+      ChatService.new(api_key: "k", retriever: StubRetriever.new, transport: transport).respond("What stack?")
+    end
+
+    assert_equal "#{ChatService::DEFAULT_BASE_URL}/chat/completions", transport.uri.to_s
   end
 
   test "sends the model and a system-then-user message pair" do

@@ -30,7 +30,19 @@ class ChatService
   class Unavailable < StandardError; end
 
   DEFAULT_BASE_URL = "https://api.groq.com/openai/v1"
-  DEFAULT_MODEL = "llama-3.3-70b-versatile"
+
+  # Providers retire model names, so treat this as a moving target rather than
+  # a constant of nature: Groq dropped `llama-3.3-70b-versatile` (CLAUDE.md's
+  # original pick) and now answers 404 for it. Override with LLM_MODEL — no
+  # code change needed — and check the live list with:
+  #
+  #   curl -H "Authorization: Bearer $GROQ_API_KEY" \
+  #        https://api.groq.com/openai/v1/models
+  #
+  # gpt-oss-20b is the cheaper/faster swap and handles this workload fine;
+  # 120b was chosen for slightly tighter adherence to the system prompt's
+  # "only answer questions about Daffa" and "don't invent facts" rules.
+  DEFAULT_MODEL = "openai/gpt-oss-120b"
 
   # Low temperature: this bot answers questions of fact about one person, so
   # determinism is worth more than variety.

@@ -111,28 +111,51 @@ variable was set in a different shell than the one the server booted from.
 
 ## Part 4 — Confirm the chat works
 
-1. Start the server with the key set (Option A/B/C above).
-2. Open <http://localhost:3000> and scroll to the **Chat with AI** section
-   (or click **AI Chat** in the navbar).
-3. Click a suggested question, e.g. *"What's Daffa's tech stack?"*
-4. You should see your question appear as a bubble, a typing indicator, then a
-   grounded answer referencing the seeded knowledge entries.
+Test in two layers, so a failure tells you *which* layer broke.
 
-If knowledge entries are missing, seed them:
+### 4a. Backend only, no browser
+
+```bash
+bin/rails runner 'puts ChatService.new.respond("What is Daffa tech stack?")'
+```
+
+Expect a 2–4 sentence answer mentioning Ruby on Rails, PostgreSQL, Sidekiq.
+If it raises instead, the message identifies the problem:
+
+| Error contains | Meaning | Fix |
+|---|---|---|
+| `no API key configured` | `.env` not loaded | Check the line reads `GROQ_API_KEY=gsk_...` — no quotes, no spaces, no `export` |
+| `HTTP 401` | Key rejected | Typo'd or revoked — regenerate at console.groq.com/keys |
+| `HTTP 404` + model message | Model retired — **key is fine** | See "Changing the model" below |
+| `RateLimited` | Quota hit | Wait, or check usage in the console |
+| `Timeout` / `SocketError` | Network or DNS | Check connectivity |
+
+Knowledge entries missing (answers vague or ungrounded)? Seed them —
+idempotent, safe to re-run:
 
 ```bash
 bin/rails db:seed
 ```
 
-(Idempotent — safe to re-run.)
+### 4b. Through the UI
+
+1. `bin/dev`
+2. Open <http://localhost:3000>, click **AI Chat** in the navbar.
+3. Click a suggested question, e.g. *"What's Daffa's tech stack?"*
+4. Expect: your question as a dark right-aligned bubble → typing indicator
+   (three bouncing dots) → the answer as a grey left-aligned bubble. The view
+   should stay scrolled to the newest message, and the input should clear
+   itself.
 
 ### Sanity checks worth doing once
 
 | Check | Expected |
 |---|---|
 | Ask something off-topic ("capital of France?") | Politely declines, redirects to Daffa-related topics |
-| Ask 11 questions in one session | 11th shows the "reached the question limit" message |
-| Restart `bin/dev` **without** the key | Chat shows "temporarily unavailable", no error page |
+| Ask an unknown fact ("which university?") | Admits it doesn't know — must not invent one |
+| Ask 11 questions in one session | 11th shows the "reached the question limit" message, without calling the API |
+| Comment out the key in `.env`, restart | Chat shows "temporarily unavailable", no error page |
+| Open the **RAG – AI Chatbot** case study, click **Try Here!** | Lands on the landing page's chat section |
 
 ---
 
@@ -150,6 +173,40 @@ bin/rails db:seed
 
 ---
 
+## Changing the model (and what to do when one is retired)
+
+**Model names are not stable.** Providers retire them. `llama-3.3-70b-versatile`
+— the model this project originally specified — was dropped by Groq and now
+returns:
+
+```
+HTTP 404: The model `llama-3.3-70b-versatile` does not exist
+or you do not have access to it.
+```
+
+A 404 like that means **your key is fine** (a bad key gives 401) and only the
+model name is wrong. To see what your key can actually use:
+
+```bash
+curl -s -H "Authorization: Bearer $GROQ_API_KEY" \
+  https://api.groq.com/openai/v1/models | grep '"id"'
+```
+
+Then override without touching code:
+
+```bash
+# in .env
+LLM_MODEL=openai/gpt-oss-20b
+```
+
+The current default is `openai/gpt-oss-120b`. `openai/gpt-oss-20b` is the
+cheaper, faster swap and handles this workload fine — the chat's job is
+summarising provided context in 2–4 sentences, not heavy reasoning. 120b is the
+default only because it adheres slightly more tightly to the system prompt's
+"only answer questions about Daffa" and "don't invent facts" rules.
+
+---
+
 ## Switching providers
 
 `ChatService` deliberately speaks the **generic OpenAI-compatible
@@ -158,7 +215,7 @@ point it elsewhere without touching Ruby:
 
 ```bash
 LLM_BASE_URL=https://openrouter.ai/api/v1 \
-LLM_MODEL=meta-llama/llama-3.3-70b-instruct \
+LLM_MODEL=some-model-id-valid-on-that-provider \
 GROQ_API_KEY=your_other_providers_key \
 bin/dev
 ```

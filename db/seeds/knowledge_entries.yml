@@ -62,7 +62,7 @@
   title: "RAG AI Chatbot on this portfolio"
   content: >
     A Retrieval-Augmented Generation chatbot built on top of a personal
-    knowledge base, using the Groq API with Llama 3.3 70B. It is deployed as a
+    knowledge base, served through the Groq API. It is deployed as a
     feature of this portfolio site, with session-based rate limiting and
     Hotwire Turbo Streams for the live chat feel. This is the assistant you
     are talking to right now.

@@ -28,18 +28,8 @@ class ChatsControllerTest < ActionDispatch::IntegrationTest
     post chat_path, params: { message: message }, as: :turbo_stream, **options
   end
 
-  # Runs the block with `key` removed from ENV, then restores it. Kept public
-  # alongside the other helpers on purpose: a `private` section here would sit
-  # above later `test` blocks, and since `test` defines methods dynamically,
-  # those would become private and silently stop being collected.
-  def without_env(key)
-    had_key = ENV.key?(key)
-    original = ENV.delete(key)
-
-    yield
-  ensure
-    ENV[key] = original if had_key
-  end
+  # `without_env` lives in test_helper.rb — see the note there on why tests
+  # asserting unconfigured behaviour must clear the variable explicitly.
 
   test "answers a question without requiring authentication" do
     with_service(FakeService.new(answer: "He uses Rails.")) do

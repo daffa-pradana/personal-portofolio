@@ -15,13 +15,18 @@ click-through, before it can be called done.
 
 ## 🚨 Action Needed First
 
-- [ ] **Set `GROQ_API_KEY` to make the chat answer anything.** Get a free key
-      at console.groq.com (no card required), then run the dev server with
-      it: `GROQ_API_KEY=gsk_... bin/dev`. Without it the UI correctly shows
-      "The AI assistant is temporarily unavailable."
-- [ ] Manual click-through of the chat still outstanding — suggested-question
-      buttons, typing indicator, scroll-to-newest, and the session limit
-      after 10 questions.
+- [x] ~~Set `GROQ_API_KEY`~~ — done 2026-08-23. Secrets now live in a
+      gitignored `.env` loaded by dotenv-rails; `.env.example` is the tracked
+      template. See `docs/groq-api-key-setup.md`.
+- [x] ~~Verify the chat answers for real~~ — confirmed end to end via
+      `bin/rails runner 'puts ChatService.new.respond(...)'`, including both
+      guardrails (declines off-topic questions; admits ignorance instead of
+      inventing an answer). Required replacing the retired default model —
+      see "Model names are a moving target" below.
+- [ ] Manual click-through of the chat **UI** still outstanding —
+      suggested-question buttons, typing indicator, scroll-to-newest, input
+      clearing, and the session limit after 10 questions. The backend is
+      verified; the browser layer is not.
 - [ ] Create a local admin user before using the CMS:
       `ADMIN_EMAIL=... ADMIN_PASSWORD=... bin/rails db:seed`
 - [x] ~~CI red on `main`~~ — fixed by PR #30 (Ruby 3.4.7 + Rails 8.1.3.1),
@@ -256,6 +261,35 @@ mapped to `RateLimited`), **401** bad key, **500/502/503** provider-side,
 
 Two details worth keeping: the field is **`max_completion_tokens`**, not the
 deprecated `max_tokens`; and Groq does not charge for 5xx responses.
+
+### Model names are a moving target
+
+**`llama-3.3-70b-versatile` — the model CLAUDE.md originally specified — no
+longer exists on Groq.** It returns HTTP 404 ("does not exist or you do not
+have access to it"). Discovered on first live call, 2026-08-23.
+
+A 404 on the model means the **key is fine** — a bad key returns 401. List
+what a key can actually reach:
+
+```bash
+curl -s -H "Authorization: Bearer $GROQ_API_KEY" \
+  https://api.groq.com/openai/v1/models | grep '"id"'
+```
+
+At the time of writing that returned 13 models, of which the general-purpose
+chat options were `openai/gpt-oss-120b`, `openai/gpt-oss-20b`,
+`qwen/qwen3.6-27b`, and Groq's `compound` agentic models. No Llama chat model
+at all (only the `llama-prompt-guard` classifiers).
+
+`DEFAULT_MODEL` is now **`openai/gpt-oss-120b`**, verified working end to end
+including both system-prompt guardrails. `openai/gpt-oss-20b` was also
+verified and is the cheaper/faster swap — this workload is summarising
+provided context in 2–4 sentences, not heavy reasoning, so the smaller model
+is genuinely adequate; 120b wins only on tighter instruction adherence.
+
+Because names churn, the seed copy in `db/seeds/knowledge_entries.yml` and
+`db/seeds/articles.yml` now says "the Groq API" rather than naming a model —
+otherwise the bot itself would eventually tell visitors something false.
 
 ## Batch 4: Polish & Production
 
