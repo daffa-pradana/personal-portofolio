@@ -41,6 +41,12 @@ gem "thruster", require: false
 # gem "image_processing", "~> 1.2"
 
 group :development, :test do
+  # Loads local secrets from .env so they don't have to be prefixed onto every
+  # command. Listed first in the group: Bundler.require follows Gemfile order,
+  # so anything that reads ENV at load time sees the values.
+  # .env is gitignored — see .env.example for the template.
+  gem "dotenv-rails"
+
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
 

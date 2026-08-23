@@ -7,8 +7,11 @@
 # Ignore bundler config.
 /.bundle
 
-# Ignore all environment files.
+# Ignore all environment files — these hold real secrets and must never be
+# committed. The .env.example template is the one exception: it is committed
+# on purpose and contains only placeholder values.
 /.env*
+!/.env.example
 
 # Ignore all logfiles and tempfiles.
 /log/*

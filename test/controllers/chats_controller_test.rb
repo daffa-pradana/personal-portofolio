@@ -28,6 +28,19 @@ class ChatsControllerTest < ActionDispatch::IntegrationTest
     post chat_path, params: { message: message }, as: :turbo_stream, **options
   end
 
+  # Runs the block with `key` removed from ENV, then restores it. Kept public
+  # alongside the other helpers on purpose: a `private` section here would sit
+  # above later `test` blocks, and since `test` defines methods dynamically,
+  # those would become private and silently stop being collected.
+  def without_env(key)
+    had_key = ENV.key?(key)
+    original = ENV.delete(key)
+
+    yield
+  ensure
+    ENV[key] = original if had_key
+  end
+
   test "answers a question without requiring authentication" do
     with_service(FakeService.new(answer: "He uses Rails.")) do
       post_question("What stack?")
@@ -115,9 +128,17 @@ class ChatsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "never leaks a raw exception when the service misbehaves entirely" do
-    # A missing API key surfaces as Unavailable from the real service, so this
-    # exercises the default configuration path with no stubbing at all.
-    post_question("What stack?")
+    # Exercises the default configuration path with no stubbing at all: a
+    # missing API key surfaces as Unavailable from the real ChatService.
+    #
+    # The key is cleared explicitly rather than assumed absent. dotenv-rails
+    # loads .env in the test environment too, so on a machine with a real key
+    # configured this test would otherwise call the live provider — slow,
+    # flaky, quota-spending, and green in CI while behaving differently
+    # locally.
+    without_env("GROQ_API_KEY") do
+      post_question("What stack?")
+    end
 
     assert_response :success
     assert_match ChatsController::UNAVAILABLE_MESSAGE, response.body
