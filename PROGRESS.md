@@ -7,9 +7,9 @@
 > in full each time.
 
 **Last updated:** 2026-08-16
-**Current focus:** Batch 3 (RAG AI chatbot) is scaffolded end to end and
-tested. It needs a real `GROQ_API_KEY` to actually answer, and a manual
-click-through, before it can be called done.
+**Current focus:** Batch 3 (RAG AI chatbot) is complete and verified against
+the live provider, including both system-prompt guardrails and both rate
+limits. Next up is Batch 4 — polish and production.
 
 ---
 
@@ -23,10 +23,20 @@ click-through, before it can be called done.
       guardrails (declines off-topic questions; admits ignorance instead of
       inventing an answer). Required replacing the retired default model —
       see "Model names are a moving target" below.
-- [ ] Manual click-through of the chat **UI** still outstanding —
+- [x] ~~Manual click-through of the chat UI~~ — done 2026-08-23, all passing:
       suggested-question buttons, typing indicator, scroll-to-newest, input
-      clearing, and the session limit after 10 questions. The backend is
-      verified; the browser layer is not.
+      clearing, off-topic decline, "don't invent facts", the 10-question
+      session limit, and the graceful "temporarily unavailable" path with no
+      key configured.
+  - **Testing gotcha worth knowing.** The session limit and the missing-key
+    path mask each other. `session[:chat_questions_asked]` lives in a signed
+    *cookie* (Rails' default cookie store), so it survives editing `.env` and
+    restarting the server — and `ChatsController` checks the limit *before*
+    calling `ChatService`, so an exhausted session short-circuits and never
+    reaches the missing-key branch at all. Both behaviours are correct, but
+    testing the no-key path after hitting the limit shows the limit message
+    instead. Use a private window (or clear the
+    `_personal_portofolio_session` cookie) to get a fresh counter.
 - [ ] Create a local admin user before using the CMS:
       `ADMIN_EMAIL=... ADMIN_PASSWORD=... bin/rails db:seed`
 - [x] ~~CI red on `main`~~ — fixed by PR #30 (Ruby 3.4.7 + Rails 8.1.3.1),
@@ -230,10 +240,13 @@ not as a side effect of a version bump.
         expected category, but no education facts appear anywhere in the
         repo and inventing them isn't an option. Add one when Daffa supplies
         the real details.
-- [ ] **Needs a real `GROQ_API_KEY` to answer anything.** Without it
-      `ChatService` raises `Unavailable` and the UI shows the "temporarily
-      unavailable" message — which is correct, tested behaviour, but means
-      the feature is inert until the key is set.
+- [x] **Verified against the live provider** (2026-08-23) with a real
+      `GROQ_API_KEY` in `.env`. Without a key `ChatService` raises
+      `Unavailable` and the UI shows the "temporarily unavailable" message —
+      confirmed by hand, not just in tests.
+  - Note for deployment: the key is a **local-only** `.env` value, and `.env`
+    is gitignored. Whenever Railway resumes, `GROQ_API_KEY` must be set there
+    as its own environment variable, or the chat ships inert.
 
 ### The provider contract ChatService implements
 
