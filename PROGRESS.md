@@ -323,7 +323,9 @@ otherwise the bot itself would eventually tell visitors something false.
       13 new tests.
 - [ ] Image optimization (Active Storage variants)
 - [ ] Database indexes + caching
-- [ ] GitHub Actions CI pipeline
+- [x] GitHub Actions CI pipeline — was already done since Batch 1
+      (`.github/workflows/ci.yml`: lint/scan_ruby/scan_js/test on every PR),
+      just never checked off here.
 - [ ] Custom domain + SSL on Railway
 - [ ] Final responsive QA across devices
 - [ ] **Trim the chat's prompt cost (deferred deliberately — see below).**
