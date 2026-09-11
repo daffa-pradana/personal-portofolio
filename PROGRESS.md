@@ -306,7 +306,14 @@ otherwise the bot itself would eventually tell visitors something false.
 
 ## Batch 4: Polish & Production
 
-- [ ] Admin dashboard: knowledge entries, site settings
+- [x] Active Storage on cloud storage in production — was `:local` disk,
+      silently losing every upload on Railway's ephemeral filesystem across
+      redeploys. Now `Cloudflare R2` (S3-compatible, zero egress, 10GB free)
+      via Rails' built-in `S3` service + `aws-sdk-s3` gem — no custom storage
+      code, just `config/storage.yml` + 4 env vars. Dev/test unchanged
+      (`:local`). Credentials via `.env` (`R2_*`), same pattern as
+      `GROQ_API_KEY`. **Not yet live** — needs a real R2 bucket + token
+      before deploying; see `.env.example`.
 - [ ] Image optimization (Active Storage variants)
 - [ ] Database indexes + caching
 - [ ] GitHub Actions CI pipeline

@@ -6,6 +6,19 @@ local:
   service: Disk
   root: <%= Rails.root.join("storage") %>
 
+# Cloudflare R2 — S3-compatible, used in production (see
+# config/environments/production.rb). Zero egress fees, 10GB free tier.
+# Credentials come from env vars via dotenv, same pattern as GROQ_API_KEY —
+# see .env.example.
+cloudflare:
+  service: S3
+  access_key_id: <%= ENV["R2_ACCESS_KEY_ID"] %>
+  secret_access_key: <%= ENV["R2_SECRET_ACCESS_KEY"] %>
+  region: auto
+  bucket: <%= ENV["R2_BUCKET"] %>
+  endpoint: <%= ENV["R2_ENDPOINT"] %>
+  force_path_style: true
+
 # Use bin/rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
 # amazon:
 #   service: S3
