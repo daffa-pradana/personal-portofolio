@@ -314,6 +314,13 @@ otherwise the bot itself would eventually tell visitors something false.
       (`:local`). Credentials via `.env` (`R2_*`), same pattern as
       `GROQ_API_KEY`. **Not yet live** — needs a real R2 bucket + token
       before deploying; see `.env.example`.
+- [x] Admin dashboard: knowledge entries + site settings CRUD — mirrors the
+      existing `Admin::ArticlesController` pattern exactly (`BaseController`
+      auth gate, no new abstractions). `SiteSettingsController` is
+      deliberately index/update only (no new/create/destroy) — settings are
+      a fixed registry seeded from `site_settings.yml`, editing values is
+      all the UI needs; each row on the index page is its own inline form.
+      13 new tests.
 - [ ] Image optimization (Active Storage variants)
 - [ ] Database indexes + caching
 - [ ] GitHub Actions CI pipeline

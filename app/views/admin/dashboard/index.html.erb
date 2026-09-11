@@ -2,7 +2,7 @@
 
 <h1 class="font-bold text-3xl text-gray-900">Dashboard</h1>
 
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
   <div class="border border-gray-200 rounded-xl bg-white p-6">
     <p class="text-sm text-gray-500">Total articles</p>
     <p class="text-3xl font-bold text-gray-900 mt-1"><%= @article_count %></p>
@@ -17,8 +17,15 @@
     <p class="text-sm text-gray-500">Drafts</p>
     <p class="text-3xl font-bold text-gray-900 mt-1"><%= @draft_count %></p>
   </div>
+
+  <div class="border border-gray-200 rounded-xl bg-white p-6">
+    <p class="text-sm text-gray-500">Knowledge entries</p>
+    <p class="text-3xl font-bold text-gray-900 mt-1"><%= @knowledge_entry_count %></p>
+  </div>
 </div>
 
-<div class="mt-8">
+<div class="mt-8 space-x-4">
   <%= link_to "Manage articles →", admin_articles_path, class: "text-sm font-medium text-gray-900 underline hover:no-underline" %>
+  <%= link_to "Manage knowledge entries →", admin_knowledge_entries_path, class: "text-sm font-medium text-gray-900 underline hover:no-underline" %>
+  <%= link_to "Site settings →", admin_site_settings_path, class: "text-sm font-medium text-gray-900 underline hover:no-underline" %>
 </div>

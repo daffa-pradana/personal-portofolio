@@ -16,6 +16,11 @@ Rails.application.routes.draw do
   namespace :admin do
     root "dashboard#index"
     resources :articles, param: :slug
+    resources :knowledge_entries
+    # No new/create/destroy: site settings are a fixed registry of keys
+    # seeded from db/seeds/site_settings.yml (see SiteSetting model) —
+    # editing values is all the admin UI needs.
+    resources :site_settings, only: [ :index, :update ]
   end
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

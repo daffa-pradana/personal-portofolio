@@ -1,0 +1,22 @@
+<% content_for :title, "Site Settings — Admin" %>
+
+<h1 class="font-bold text-3xl text-gray-900 mb-8">Site Settings</h1>
+
+<div class="border border-gray-200 rounded-xl bg-white divide-y divide-gray-100">
+  <% @site_settings.each do |setting| %>
+    <div class="px-5 py-4">
+      <%= form_with model: [ :admin, setting ], class: "flex items-end gap-4" do |form| %>
+        <div class="flex-1">
+          <label class="block text-sm font-medium text-gray-900"><%= setting.key %></label>
+          <%= form.text_field :value, value: setting.value,
+                class: "block shadow-sm rounded-md border border-gray-300 focus:outline-gray-900 px-3 py-2 mt-2 w-full" %>
+        </div>
+        <%= form.submit "Save", class: "rounded-md px-3.5 py-2.5 bg-gray-900 hover:bg-gray-700 text-white text-sm font-medium cursor-pointer" %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if @site_settings.empty? %>
+    <div class="px-5 py-6 text-center text-gray-500">No site settings yet — seed them via db/seeds/site_settings.yml.</div>
+  <% end %>
+</div>
