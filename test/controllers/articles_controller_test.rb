@@ -67,6 +67,29 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", text: articles(:jira_integration).title
   end
 
+  # Nothing else attaches a real cover_image and renders a page — without this,
+  # a broken variant() call (wrong name, bad processing option) would only
+  # surface in production, on the first real upload.
+  test "show renders the :hero variant for an attached cover image" do
+    article = articles(:jira_integration)
+    article.cover_image.attach(io: file_fixture("cover_image.png").open, filename: "cover.png", content_type: "image/png")
+
+    get article_path(article)
+
+    assert_response :success
+    assert_select "img[src*='cover.png']"
+  end
+
+  test "index renders the :thumb variant for an attached cover image" do
+    article = articles(:jira_integration)
+    article.cover_image.attach(io: file_fixture("cover_image.png").open, filename: "cover.png", content_type: "image/png")
+
+    get articles_path
+
+    assert_response :success
+    assert_select "img[src*='cover.png']"
+  end
+
   test "show 404s for a draft" do
     get article_path(articles(:unpublished_case_study))
 

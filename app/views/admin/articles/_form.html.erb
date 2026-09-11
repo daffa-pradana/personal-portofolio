@@ -67,7 +67,7 @@
   <div>
     <%= form.label :cover_image, class: "block text-sm font-medium text-gray-900" %>
     <% if article.cover_image.attached? %>
-      <%= image_tag article.cover_image, class: "mt-2 rounded-lg h-32 object-cover" %>
+      <%= image_tag article.cover_image.variant(:thumb), class: "mt-2 rounded-lg h-32 object-cover" %>
     <% end %>
     <%= form.file_field :cover_image, accept: "image/*", class: "block mt-2 w-full text-sm text-gray-600" %>
   </div>

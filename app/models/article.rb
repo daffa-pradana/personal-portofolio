@@ -4,7 +4,16 @@ class Article < ApplicationRecord
   WORDS_PER_MINUTE = 200
 
   has_rich_text :body
-  has_one_attached :cover_image
+
+  # Named variants so cards/show pages stop serving full-resolution uploads.
+  # :thumb matches the card's own aspect-[16/10] crop; :hero matches the show
+  # page's aspect-video. Both lazy — Rails only resizes on first request for
+  # that derivative (needs libvips; already in the Dockerfile, not required
+  # for tests or dev unless you're actually viewing an uploaded image).
+  has_one_attached :cover_image do |attachable|
+    attachable.variant :thumb, resize_to_fill: [ 800, 500 ], saver: { quality: 80 }
+    attachable.variant :hero, resize_to_limit: [ 1200, 675 ], saver: { quality: 85 }
+  end
 
   enum :article_type, { blog: 0, case_study: 1 }
   enum :status, { draft: 0, published: 1 }

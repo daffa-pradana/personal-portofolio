@@ -64,7 +64,7 @@
 
   <% if @article.cover_image.attached? %>
     <div class="max-w-[680px] mx-auto px-6 mt-9">
-      <%= image_tag @article.cover_image, alt: @article.title, class: "w-full aspect-video object-cover rounded-xl" %>
+      <%= image_tag @article.cover_image.variant(:hero), alt: @article.title, class: "w-full aspect-video object-cover rounded-xl" %>
     </div>
   <% end %>
 
