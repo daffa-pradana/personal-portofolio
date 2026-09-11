@@ -322,7 +322,16 @@ otherwise the bot itself would eventually tell visitors something false.
       all the UI needs; each row on the index page is its own inline form.
       13 new tests.
 - [ ] Image optimization (Active Storage variants)
-- [ ] Database indexes + caching
+- [x] Database indexes + caching — audited, no gap found. Every unique
+      constraint and filter the code actually runs already has an index
+      (`articles.slug`/`article_type`/`status`/`published_at`,
+      `knowledge_entries.category`/`position`, etc.). Tables are tiny
+      (articles: 3, knowledge_entries: 13, site_settings: 1 row) and no
+      `Rails.cache` call exists anywhere — adding composite indexes or
+      fragment caching now would be tuning a query Postgres already answers
+      via seq scan in microseconds. Revisit `KnowledgeRetriever#retrieve`
+      (queries all rows fresh on every chat message) with `Rails.cache.fetch`
+      if the table ever grows past a few hundred rows — not before.
 - [x] GitHub Actions CI pipeline — was already done since Batch 1
       (`.github/workflows/ci.yml`: lint/scan_ruby/scan_js/test on every PR),
       just never checked off here.
