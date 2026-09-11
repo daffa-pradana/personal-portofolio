@@ -321,7 +321,20 @@ otherwise the bot itself would eventually tell visitors something false.
       a fixed registry seeded from `site_settings.yml`, editing values is
       all the UI needs; each row on the index page is its own inline form.
       13 new tests.
-- [ ] Image optimization (Active Storage variants)
+- [x] Image optimization (Active Storage variants) — `image_processing` gem
+      uncommented (was already scaffolded in Gemfile, commented out).
+      `Article` gets two named variants: `:thumb` (800×500, matches the
+      card's `aspect-[16/10]` crop) and `:hero` (max 1200×675, matches the
+      show page's `aspect-video`). Wired into all three render sites (card
+      partial, admin form preview, show page) — the landing page picks it up
+      for free since it renders the same shared `_card` partial.
+      Variant resolution is lazy: Rails only processes the actual pixels on
+      first browser request for that derivative, so this needed no libvips
+      locally or in CI — only production does the real resizing, and
+      libvips is already in the Dockerfile. Added controller tests that
+      attach a real fixture image and render the page, since nothing
+      previously did that; without them a broken variant name/option would
+      only have surfaced on the first real upload in production.
 - [x] Database indexes + caching — audited, no gap found. Every unique
       constraint and filter the code actually runs already has an index
       (`articles.slug`/`article_type`/`status`/`published_at`,
