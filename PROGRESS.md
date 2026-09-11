@@ -7,16 +7,36 @@
 > in full each time.
 
 **Last updated:** 2026-08-16
-**Current focus:** Batch 2 — Articles CMS. Admin namespace + Article CRUD done
-(PR #36); next up is the public articles index/show pages + `_card.html.erb`.
+**Current focus:** Batch 3 (RAG AI chatbot) is complete and verified against
+the live provider, including both system-prompt guardrails and both rate
+limits. Next up is Batch 4 — polish and production.
 
 ---
 
 ## 🚨 Action Needed First
 
-- [ ] **Nothing blocking.** Next up is the public-facing side of Batch 2:
-      `_card.html.erb` (stretched-link pattern), the `/articles` index with
-      All/Blog/Case Studies filter tabs, and the article show page.
+- [x] ~~Set `GROQ_API_KEY`~~ — done 2026-08-23. Secrets now live in a
+      gitignored `.env` loaded by dotenv-rails; `.env.example` is the tracked
+      template. See `docs/groq-api-key-setup.md`.
+- [x] ~~Verify the chat answers for real~~ — confirmed end to end via
+      `bin/rails runner 'puts ChatService.new.respond(...)'`, including both
+      guardrails (declines off-topic questions; admits ignorance instead of
+      inventing an answer). Required replacing the retired default model —
+      see "Model names are a moving target" below.
+- [x] ~~Manual click-through of the chat UI~~ — done 2026-08-23, all passing:
+      suggested-question buttons, typing indicator, scroll-to-newest, input
+      clearing, off-topic decline, "don't invent facts", the 10-question
+      session limit, and the graceful "temporarily unavailable" path with no
+      key configured.
+  - **Testing gotcha worth knowing.** The session limit and the missing-key
+    path mask each other. `session[:chat_questions_asked]` lives in a signed
+    *cookie* (Rails' default cookie store), so it survives editing `.env` and
+    restarting the server — and `ChatsController` checks the limit *before*
+    calling `ChatService`, so an exhausted session short-circuits and never
+    reaches the missing-key branch at all. Both behaviours are correct, but
+    testing the no-key path after hitting the limit shows the limit message
+    instead. Use a private window (or clear the
+    `_personal_portofolio_session` cookie) to get a fresh counter.
 - [ ] Create a local admin user before using the CMS:
       `ADMIN_EMAIL=... ADMIN_PASSWORD=... bin/rails db:seed`
 - [x] ~~CI red on `main`~~ — fixed by PR #30 (Ruby 3.4.7 + Rails 8.1.3.1),
@@ -166,23 +186,123 @@ not as a side effect of a version bump.
       comma-separated text field, split into the Postgres array column
       server-side. Drag-to-reorder for `position` deliberately deferred —
       a plain number field covers the curation need for now.
-- [ ] `_card.html.erb` partial with stretched-link pattern (shared: landing
-      page "My Latest Projects" + articles index)
-- [ ] Public articles index (`/articles`, filter tabs: All/Blog/Case Studies)
-- [ ] Public article show page (Medium-style, matches `docs/design/exports/article_show.html`)
-- [ ] Turbo Frame filtering on articles index
-- [ ] Navbar "Articles" link wired to `/articles`
-- [ ] SEO meta tags
+- [x] `_card.html.erb` partial with stretched-link pattern — shared by the
+      landing page's "My Latest Projects" section (`show_meta: false`, no
+      type/date/reading-time line — the design export deliberately omits it
+      there) and the articles index (`show_meta: true`, the default).
+- [x] Public articles index (`/articles`) — filter tabs All/Blog/Case Studies.
+- [x] Public article show page (Medium-style) — Source Serif 4 20px/1.78 on
+      a 680px measure, scoped via `.article-body .trix-content` in
+      `application.css` so the admin's Trix editor keeps its own sizing.
+- [x] Turbo Frame filtering on articles index — one `turbo_frame_tag
+      "articles"` wraps both the tabs and the grid; tab links are plain
+      `articles_path(kind: ...)` GETs, no controller branching needed beyond
+      filtering `@articles` by `params[:kind]`.
+- [x] Navbar "Articles" link wired to `/articles` — `_navbar.html.erb` and
+      `_footer.html.erb` now use `root_path(anchor: "about")` etc. instead of
+      bare `"#about"`, so the same partials work unchanged from `/articles`
+      and `/articles/:slug` (real navigation back to `/`, then scroll) as
+      well as from the landing page itself (plain in-page scroll).
+- [x] SEO meta tags — `<title>`/description/Open Graph tags in
+      `application.html.erb`, set per-page via `content_for`.
+
+**Batch 2 is now functionally complete**, pending PR review/merge.
 
 ## Batch 3: RAG AI Chatbot
 
-- [ ] `KnowledgeEntry` model + migration
-- [ ] `ChatService` (Groq API integration)
-- [ ] `ChatsController` with rate limiting (10/session, 20/hour/IP)
-- [ ] Chat UI with Turbo Streams + Stimulus
-- [ ] Suggested question buttons, typing indicator
-- [ ] Graceful denial messages (rate limit hit, Groq unavailable)
-- [ ] Seed knowledge entries about Daffa
+- [x] `KnowledgeEntry` model + migration — `category`/`title`/`content`/
+      `position`, with an `ordered` scope that sorts `position ASC NULLS
+      LAST` (Postgres puts NULLs first on ASC by default, which would rank
+      uncurated entries above curated ones).
+- [x] `ChatService` — built against the **generic OpenAI-compatible
+      `/chat/completions` contract**, not a Groq SDK, so the provider can be
+      swapped via `LLM_BASE_URL`/`LLM_MODEL` env vars without a rewrite.
+      Groq remains the default. Takes an injectable `transport:` callable —
+      that's the seam the contract tests use instead of a mocking gem.
+      Raises only `ChatService::RateLimited` / `ChatService::Unavailable`;
+      every network error, non-200 and malformed body collapses into those.
+- [x] `ChatsController` with rate limiting (10/session, 20/hour/IP) —
+      per-session cap implemented here, per-IP via Rails 8's built-in
+      `rate_limit` (Solid Cache backed).
+- [x] Chat UI with Turbo Streams + Stimulus — a plain Turbo form POST
+      answered with two `turbo_stream.append`s (the visitor's question and
+      the answer), so no message is ever rendered client-side.
+- [x] Suggested question buttons, typing indicator — indicator toggled off
+      `turbo:submit-start`/`turbo:submit-end`; a MutationObserver keeps the
+      transcript scrolled to the newest message.
+- [x] Graceful denial messages (rate limit hit, provider unavailable) —
+      verbatim from CLAUDE.md. Provider error detail goes to the Rails log
+      only; tests assert the raw text never reaches the response body.
+- [x] Seed knowledge entries about Daffa — 8 entries in
+      `db/seeds/knowledge_entries.yml`, drawn only from facts already in the
+      repo.
+  - [ ] **No `education` entry exists.** CLAUDE.md lists education as an
+        expected category, but no education facts appear anywhere in the
+        repo and inventing them isn't an option. Add one when Daffa supplies
+        the real details.
+- [x] **Verified against the live provider** (2026-08-23) with a real
+      `GROQ_API_KEY` in `.env`. Without a key `ChatService` raises
+      `Unavailable` and the UI shows the "temporarily unavailable" message —
+      confirmed by hand, not just in tests.
+  - Note for deployment: the key is a **local-only** `.env` value, and `.env`
+    is gitignored. Whenever Railway resumes, `GROQ_API_KEY` must be set there
+    as its own environment variable, or the chat ships inert.
+
+### The provider contract ChatService implements
+
+Researched against Groq's live API reference rather than assumed:
+
+```
+POST {base_url}/chat/completions
+Authorization: Bearer <api_key>
+Content-Type: application/json
+
+->  { "model": "...", "messages": [{ "role": "system"|"user", "content": "..." }],
+      "temperature": 0.3, "max_completion_tokens": 500 }
+
+<-  200 { "choices": [{ "index": 0,
+                        "message": { "role": "assistant", "content": "..." },
+                        "finish_reason": "stop" }],
+          "usage": { "prompt_tokens": N, "completion_tokens": N, "total_tokens": N } }
+
+<-  4xx/5xx { "error": { "message": "...", "type": "..." } }
+```
+
+Status codes that matter: **429** rate limited (carries `retry-after`;
+mapped to `RateLimited`), **401** bad key, **500/502/503** provider-side,
+**413/422** request rejected — all mapped to `Unavailable`.
+
+Two details worth keeping: the field is **`max_completion_tokens`**, not the
+deprecated `max_tokens`; and Groq does not charge for 5xx responses.
+
+### Model names are a moving target
+
+**`llama-3.3-70b-versatile` — the model CLAUDE.md originally specified — no
+longer exists on Groq.** It returns HTTP 404 ("does not exist or you do not
+have access to it"). Discovered on first live call, 2026-08-23.
+
+A 404 on the model means the **key is fine** — a bad key returns 401. List
+what a key can actually reach:
+
+```bash
+curl -s -H "Authorization: Bearer $GROQ_API_KEY" \
+  https://api.groq.com/openai/v1/models | grep '"id"'
+```
+
+At the time of writing that returned 13 models, of which the general-purpose
+chat options were `openai/gpt-oss-120b`, `openai/gpt-oss-20b`,
+`qwen/qwen3.6-27b`, and Groq's `compound` agentic models. No Llama chat model
+at all (only the `llama-prompt-guard` classifiers).
+
+`DEFAULT_MODEL` is now **`openai/gpt-oss-120b`**, verified working end to end
+including both system-prompt guardrails. `openai/gpt-oss-20b` was also
+verified and is the cheaper/faster swap — this workload is summarising
+provided context in 2–4 sentences, not heavy reasoning, so the smaller model
+is genuinely adequate; 120b wins only on tighter instruction adherence.
+
+Because names churn, the seed copy in `db/seeds/knowledge_entries.yml` and
+`db/seeds/articles.yml` now says "the Groq API" rather than naming a model —
+otherwise the bot itself would eventually tell visitors something false.
 
 ## Batch 4: Polish & Production
 
@@ -192,6 +312,51 @@ not as a side effect of a version bump.
 - [ ] GitHub Actions CI pipeline
 - [ ] Custom domain + SSL on Railway
 - [ ] Final responsive QA across devices
+- [ ] **Trim the chat's prompt cost (deferred deliberately — see below).**
+      Retrieval currently sends the entire knowledge base on every question.
+      Intended fix: cap at roughly the top 6 entries by score, but with a
+      floor that always includes the `contact` entry, so it recovers most of
+      the tokens without reintroducing the starvation bug that made sending
+      everything necessary in the first place. Not urgent: the current cost
+      is free-tier-safe, just with a thinner margin.
+
+### Chat token cost — measured, and why it is on the deferred list
+
+Measured 2026-08-23 after the knowledge base rewrite, because the two
+changes that landed together had very different cost profiles and it was
+worth knowing which one mattered:
+
+| Scenario | Avg input tokens/question |
+|---|---|
+| Original design (8 entries, scoring filters) | 352 |
+| Knowledge base rewrite alone (13 entries, still filtering) | 432 (+23%) |
+| **Shipping now** (13 entries, scoring only orders) | **1,439 (+309%)** |
+
+So only ~7% of the rise came from the content growing; ~93% came from
+switching scoring to order-not-filter. That was a deliberate trade — it
+fixed real starvation, where "is he any good?" was answered from a single
+entry — but the cost was quoted at the time as "negligible" without
+checking it against the actual quota. It is not negligible relative to the
+free tier, just affordable.
+
+Groq free tier for `openai/gpt-oss-120b`: **8K tokens/min, 200K tokens/day,
+30 req/min, 1K req/day.** At ~1,589 tokens per question including a typical
+2–4 sentence answer:
+
+- ~**5** questions/minute before TPM caps (was ~16)
+- ~**126** questions/day before TPD caps (was ~398)
+- **TPM is the binding limit, not request count** — the 30 req/min allowance
+  is unreachable, so a few simultaneous visitors can trigger 429s. Handled
+  gracefully, but they see the limit message.
+- With the app's 20 questions/hour/IP cap, a single determined visitor can
+  drain the daily token quota in ~6 hours (was ~20).
+
+Switching to `gpt-oss-20b` does **not** help — identical free-tier limits.
+Trimming entry verbosity would (entries average 59 words).
+
+Verdict: still free, no billing risk, and 126 questions/day is plenty for a
+personal site. The scenario that would actually bite is demoing the site to
+several people at once. Revisit after the current batches.
 
 ## Batch 5 (Optional/Future)
 
@@ -215,6 +380,189 @@ not as a side effect of a version bump.
 ## Session Log
 
 Brief notes per work session — what got done, what decisions were made, what's blocked.
+
+### 2026-08-23 (later — knowledge base rewrite, and three retrieval bugs it exposed)
+
+Daffa rewrote `db/seeds/knowledge_entries.yml` himself with current,
+authoritative information (8 entries -> 13, new categories, real education
+details, and specific achievements). Verifying it surfaced three problems,
+none of them in the file itself — all fixed in order:
+
+1. **Seeding was append-only, so the old rows survived.** `seed_from_yaml`
+   matches on `find_by:` and never deletes, and every title had been
+   reworded, so *zero* of 13 matched the existing 8. `db:seed` would have
+   left 21 entries, feeding the model "4 years of professional experience"
+   (old row) and "five years of production experience" (new entry) in the
+   same prompt — the bot contradicting itself on a basic fact.
+   Fixed with an opt-in `prune:` flag on `seed_from_yaml`, enabled for
+   knowledge entries only: the YAML is now the single source of truth and
+   seeding converges the table to it. Pruning announces what it deletes
+   rather than doing it silently. Deliberately *not* enabled for
+   `SiteSetting` (admin-editable — pruning could wipe values set through the
+   UI) or `Article`.
+   This is the same fragility already fixed for articles by moving to
+   `find_by: :slug`: titles are prose, prose gets reworded, so a title is a
+   poor identity key. Noted at the call site that Batch 4's planned admin
+   CRUD for knowledge entries would invalidate the prune assumption, and
+   that a stable key column is the real answer then.
+
+2. **`MAX_ENTRIES` was 8 while the base grew to 13.** The cap was set when
+   there happened to be exactly 8 entries, so it silently became a real
+   truncation. With `position` now absent from every entry the tail is just
+   insertion order, so the five dropped were all three `skills` entries, the
+   portfolio entry, and — last in the file — `contact`, the one thing the
+   system prompt explicitly tells the model to point visitors toward.
+   Measured before changing it: the entire knowledge base is ~770 words /
+   ~1,300 tokens, so truncation was never buying anything. Raised to 25 as a
+   runaway guard rather than a cost control, with a test that reads the real
+   seed file and fails if the shipped base ever outgrows the cap.
+
+3. **Scoring was filtering, not just ordering — and that was starving the
+   model.** Zero-scoring entries were rejected outright, and keyword overlap
+   between a short question and a short entry is sparse, so real questions
+   got almost no context: "What projects has Daffa worked on?" -> 2 of 13
+   entries, "is he any good?" -> 1, "why should I hire him" -> 2. Two of
+   those are the UI's own suggested questions. The shape was perverse — a
+   nonsense question matched nothing, hit the everything-fallback, and got
+   all 13, while a good question got one.
+   Since the whole base fits comfortably in context, scoring now *orders*
+   without filtering: every question receives the full base, best-ranked
+   first. Verified against the real data — all 13 entries and contact info
+   on every question, with sensible top hits ("tech stack" -> Core tech
+   stack, "contact" -> How to get in touch, "why should I hire him" -> the
+   Happy5 role).
+   Also removed a latent bug found while rewriting it: the old code relied
+   on `sort_by` being stable, which Ruby does not guarantee, so equal scores
+   could have reordered between identical requests. Position is now an
+   explicit tiebreaker.
+
+**Still open from this rewrite:** `_about.html.erb` says "4 years of
+professional experience" with a "4+" stat card, while the knowledge base now
+says five. The maths favours the knowledge base — July 2021 to now is 5.1
+years — so the landing page is the stale one. Not fixed here because it is
+site copy rather than a retrieval bug, and the chat section sits directly
+below that paragraph on the same page.
+
+### 2026-08-23 — Batch 3 scaffolded (RAG AI chatbot)
+
+- **Researched the provider contract instead of assuming it** — see "The
+  provider contract ChatService implements" above for the full request/
+  response/error shape. Two things the research changed: the current field
+  name is `max_completion_tokens` (not the deprecated `max_tokens`), and the
+  documented error envelope is `{"error": {"message", "type"}}`, which is
+  what `ChatService` parses for its log messages.
+- **Built provider-agnostic on purpose**, per Daffa's requirement to stay
+  free/near-free and keep the option to switch: `ChatService` speaks the
+  generic OpenAI-compatible dialect, with `LLM_BASE_URL`/`LLM_MODEL` env
+  overrides. Groq stays the default (free tier, no card, fast). Swapping to
+  OpenRouter/Together/Cerebras/Gemini-compat is a config change.
+- **Contract tests use dependency injection, not a mocking gem.** The Gemfile
+  has no webmock/VCR and adding one for this wasn't warranted, so
+  `ChatService` takes a `transport:` callable — `(uri, body, headers) ->
+  [status, body]`. Tests inject a recorder that both captures the outgoing
+  request (asserting the request half of the contract) and returns canned
+  responses (asserting the response half): 200, 429, 401, 500/502/503,
+  non-JSON error body, non-JSON 200 body, empty choices, blank content.
+- **The injected-transport tests would have left the shipped `Net::HTTP`
+  path completely uncovered**, so three more tests stub `Net::HTTP.start`
+  and exercise the real transport — including that all six network failure
+  classes (`Timeout::Error`, `ECONNREFUSED`, `ECONNRESET`, `SocketError`,
+  `SSLError`, `IOError`) collapse into `Unavailable` rather than escaping as
+  themselves. `minitest/mock` has to be required explicitly; it isn't loaded
+  by default in this app's test env.
+- **Found that the per-IP `rate_limit` cannot be behaviourally tested here.**
+  Rails resolves the limiter's backing store when the controller class
+  loads, and `config/environments/test.rb` sets `:null_store`, whose
+  `increment` returns `nil` — so the limiter never fires under test no matter
+  how many requests are made. Documented in the test file rather than
+  faked; the session-scoped limit (this app's own code) is fully tested.
+- **Fixed an adjacent dead link that Batch 3 made user-visible.** The RAG
+  case study seeds `button_url: "#chat"`, but that CTA also renders on
+  `/articles` and `/articles/:slug`, where no `#chat` section exists — so
+  the documented "Try Here!" route into the chat went nowhere. Extracted
+  `article_cta_url`/`article_cta_link_options` into `ArticlesHelper` (the
+  logic was duplicated across the card partial and the show page anyway) and
+  resolved anchors against `root_path(anchor:)`, matching what the navbar and
+  footer already do.
+- **Knowledge entries contain only facts already in the repo** (about
+  section, article seeds, contacts). No `education` entry exists because no
+  education facts do — flagged in the checklist rather than invented.
+  Retrieval spot-checked against the real seeded data: "tech stack" →
+  Tech stack entry, "how can I contact him" → contact entry, "Jira
+  integration" → the Jira case study, and an off-topic question falls back
+  to full context (which the system prompt then declines).
+- **A migration gotcha worth remembering:** the first `db:migrate` ran the
+  generator's *empty* migration body, creating `knowledge_entries` with only
+  `id`/timestamps. `db:rollback` then failed, because the down-migration
+  tried to remove indexes that run had never created. Recovered by dropping
+  the (empty) table, deleting its `schema_migrations` row, and re-running.
+  Verified the table had 0 rows first.
+- 74 -> 131 tests, all green. 0 rubocop offenses, 0 brakeman warnings.
+
+### 2026-08-22 (later — two bugs from Daffa's manual review, fixed on the same PR)
+
+- **Real regression, caught by manual testing, not the automated suite:**
+  clicking a card's "read the article" link *from the articles index*
+  landed on a blank "Content missing" state instead of the show page, and
+  the URL bar/browser back button both behaved wrong. Root cause: cards on
+  `/articles` live inside `turbo_frame_tag "articles"` (needed for the
+  filter tabs), so Turbo scoped the card's link click to that frame instead
+  of doing a normal page visit — it fetched the show page looking for a
+  matching `#articles` frame in the response, found none, and rendered
+  Turbo's own "Content missing" placeholder. Frame-scoped navigations don't
+  touch browser history either, which is why the address bar stayed on
+  `/articles` and "back" skipped straight to the last *real* page visit.
+  Fixed with `data-turbo-frame="_top"` on the card's stretched link, plus a
+  regression test asserting that attribute is present. Cards on the landing
+  page were never affected (no enclosing frame there), which is exactly why
+  this didn't surface until testing the index page specifically.
+- **Minor spacing bug, also from manual review:** the show page's
+  "← All articles" link and "CASE STUDY" badge rendered on the same line,
+  nearly touching. Cause: both were inline-level elements with no
+  block-level wrapper between them, so their `mb-*` margins were silently
+  ignored — vertical margin has no layout effect on inline boxes sharing a
+  line. Fixed by wrapping each in its own block-level `div`, matching the
+  design export's actual structure (its badge is already inside a `<div>`,
+  which is *why* it doesn't hit this in the reference HTML).
+- 73 -> 74 tests (added the turbo-frame regression test). Still 0 rubocop
+  offenses, 0 brakeman warnings.
+
+### 2026-08-22 — public articles pages (Batch 2 complete)
+
+- Built the entire public-facing remainder of Batch 2 in one PR:
+  `_card.html.erb`, the `/articles` index with Turbo Frame filter tabs, the
+  article show page, navbar/footer wiring, and SEO meta tags.
+- Refactored `_projects.html.erb` (landing page) to render the new shared
+  `articles/_card` partial instead of its own inline markup — the design
+  export's own README explicitly calls out that the two cards should share
+  one partial. Caught a real discrepancy while translating: the landing
+  page's cards deliberately omit the "type · reading time · date" meta line
+  that the articles-index cards have (`docs/design/README.md`'s own
+  "Decisions I made" section flags this), so the partial takes a
+  `show_meta:` local rather than always rendering it.
+- `_navbar.html.erb`/`_footer.html.erb` switched from bare `"#about"` anchors
+  to `root_path(anchor: "about")` etc. — works identically on the landing
+  page and lets the exact same partials be reused on `/articles` and
+  `/articles/:slug` without any "am I on the home page" branching.
+- Turbo Frame filtering needed zero JS and zero extra controller logic:
+  wrapping both the tabs and the grid in one `turbo_frame_tag "articles"`
+  is enough — Turbo automatically extracts the matching frame from
+  whichever full-page response comes back, so `ArticlesController#index`
+  only had to filter `@articles` by `params[:kind]`.
+- Article prose typography (Source Serif 4, 20px/1.78, 680px measure) is
+  scoped via a `.article-body .trix-content` compound selector in
+  `application.css` — deliberately not touching plain `.trix-content`,
+  which would also restyle the Trix editor while writing in the admin CMS.
+  Higher specificity than actiontext.css's single-class rule wins regardless
+  of stylesheet load order, so this doesn't depend on file ordering.
+- Brakeman caught a real (if low-severity) issue during verification: the
+  byline's `"date · reading time"` line used `&middot;` + `.html_safe` on a
+  join of model-derived strings — flagged as "unescaped model attribute."
+  Fixed by using a literal `·` character and dropping `.html_safe` entirely,
+  in both this page and the card partial.
+- 62 -> 73 tests, all green. 0 rubocop offenses, 0 brakeman warnings.
+- **Batch 2 is functionally complete** as of this PR (pending review/merge).
+  Batch 3 (RAG AI chatbot) is next.
 
 ### 2026-08-16 (later — admin namespace + Article CRUD)
 

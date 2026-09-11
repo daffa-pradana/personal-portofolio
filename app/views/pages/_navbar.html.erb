@@ -1,14 +1,29 @@
+<%#
+  Shared navbar — rendered from the landing page AND the articles pages.
+  "About"/"Projects"/"AI Chat"/"Contacts" always point at root_path anchors
+  (root_path(anchor: "about") etc.) rather than bare "#about" — that way the
+  same partial works whether we're already on "/" (plain in-page scroll) or
+  navigating back to it from "/articles" (real navigation, then scroll).
+  "Articles" is the one real cross-page link.
+
+  current: pass :articles from the articles views to underline that link.
+%>
+<% current = local_assigns[:current] %>
 <nav class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200"
      data-controller="navbar">
   <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-    <a href="#" class="text-lg font-bold text-gray-900 tracking-tight">Daffa Pradana</a>
+    <%= link_to "Daffa Pradana", root_path, class: "text-lg font-bold text-gray-900 tracking-tight" %>
 
     <%# Desktop nav %>
     <ul class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
-      <li><a href="#about" class="hover:text-gray-900 transition-colors">About</a></li>
-      <li><a href="#projects" class="hover:text-gray-900 transition-colors">Projects</a></li>
-      <li><a href="#chat" class="hover:text-gray-900 transition-colors">AI Chat</a></li>
-      <li><a href="#contacts" class="hover:text-gray-900 transition-colors">Contacts</a></li>
+      <li><%= link_to "About", root_path(anchor: "about"), class: "hover:text-gray-900 transition-colors" %></li>
+      <li><%= link_to "Projects", root_path(anchor: "projects"), class: "hover:text-gray-900 transition-colors" %></li>
+      <li>
+        <%= link_to "Articles", articles_path,
+              class: current == :articles ? "font-semibold text-gray-900 underline underline-offset-8 decoration-2" : "hover:text-gray-900 transition-colors" %>
+      </li>
+      <li><%= link_to "AI Chat", root_path(anchor: "chat"), class: "hover:text-gray-900 transition-colors" %></li>
+      <li><%= link_to "Contacts", root_path(anchor: "contacts"), class: "hover:text-gray-900 transition-colors" %></li>
     </ul>
 
     <%# Mobile hamburger %>
@@ -27,10 +42,11 @@
   <%# Mobile menu %>
   <div data-navbar-target="menu" class="hidden md:hidden border-t border-gray-100 bg-white">
     <ul class="flex flex-col px-6 py-4 gap-4 text-sm font-medium text-gray-600">
-      <li><a href="#about" class="hover:text-gray-900 transition-colors" data-action="click->navbar#closeMenu">About</a></li>
-      <li><a href="#projects" class="hover:text-gray-900 transition-colors" data-action="click->navbar#closeMenu">Projects</a></li>
-      <li><a href="#chat" class="hover:text-gray-900 transition-colors" data-action="click->navbar#closeMenu">AI Chat</a></li>
-      <li><a href="#contacts" class="hover:text-gray-900 transition-colors" data-action="click->navbar#closeMenu">Contacts</a></li>
+      <li><%= link_to "About", root_path(anchor: "about"), class: "hover:text-gray-900 transition-colors", data: { action: "click->navbar#closeMenu" } %></li>
+      <li><%= link_to "Projects", root_path(anchor: "projects"), class: "hover:text-gray-900 transition-colors", data: { action: "click->navbar#closeMenu" } %></li>
+      <li><%= link_to "Articles", articles_path, class: current == :articles ? "font-semibold text-gray-900" : "hover:text-gray-900 transition-colors", data: { action: "click->navbar#closeMenu" } %></li>
+      <li><%= link_to "AI Chat", root_path(anchor: "chat"), class: "hover:text-gray-900 transition-colors", data: { action: "click->navbar#closeMenu" } %></li>
+      <li><%= link_to "Contacts", root_path(anchor: "contacts"), class: "hover:text-gray-900 transition-colors", data: { action: "click->navbar#closeMenu" } %></li>
     </ul>
   </div>
 </nav>

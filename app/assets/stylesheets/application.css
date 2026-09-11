@@ -8,3 +8,69 @@
  *
  * Consider organizing styles into separate files for maintainability.
  */
+
+/*
+ * Medium-style prose for the public article show page (docs/design/exports/
+ * article_show.html: Source Serif 4, 20px/1.78, 680px measure). Scoped under
+ * .article-body so the Trix editor in the admin CMS keeps its own default
+ * sizing while writing — actiontext.css's plain .trix-content rule would
+ * otherwise apply everywhere. The compound selector here has higher
+ * specificity than that single-class rule, so this wins regardless of
+ * stylesheet load order.
+ */
+.article-body .trix-content {
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 20px;
+  line-height: 1.78;
+  color: #1f2937;
+}
+
+.article-body .trix-content h1,
+.article-body .trix-content h2,
+.article-body .trix-content h3 {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #0f172a;
+  margin-top: 2.1em;
+}
+
+.article-body .trix-content p,
+.article-body .trix-content ul,
+.article-body .trix-content ol,
+.article-body .trix-content blockquote,
+.article-body .trix-content pre {
+  margin-top: 1.3em;
+}
+
+.article-body .trix-content li {
+  margin-left: 1.5em;
+}
+
+.article-body .trix-content pre {
+  padding: 18px 20px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow-x: auto;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 0.85em;
+  line-height: 1.65;
+  color: #0f172a;
+}
+
+.article-body .trix-content blockquote {
+  border-left: 3px solid #e2e8f0;
+  padding-left: 20px;
+  color: #475569;
+  font-style: italic;
+}
+
+.article-body .trix-content a {
+  color: #0f172a;
+  text-decoration: underline;
+}
+
+.article-body .trix-content img {
+  border-radius: 10px;
+}

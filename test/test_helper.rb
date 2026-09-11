@@ -12,5 +12,22 @@ module ActiveSupport
     fixtures :all
 
     # Add more helper methods to be used by all tests here...
+
+    # Runs the block with `key` removed from ENV, then restores it.
+    #
+    # dotenv-rails loads .env in the test environment, so any test asserting
+    # default/unconfigured behaviour has to clear the variable explicitly —
+    # otherwise it passes in CI (no .env) while doing something entirely
+    # different on a machine that has one, up to and including calling a live
+    # API. Tests run in separate processes under parallelize, so mutating ENV
+    # here is process-local.
+    def without_env(key)
+      had_key = ENV.key?(key)
+      original = ENV.delete(key)
+
+      yield
+    ensure
+      ENV[key] = original if had_key
+    end
   end
 end

@@ -1,7 +1,13 @@
 <!DOCTYPE html>
 <html class="scroll-smooth">
   <head>
-    <title><%= content_for(:title) || "Personal Portofolio" %></title>
+    <% page_title = content_for(:title) || "Daffa Pradana — Backend Engineer" %>
+    <% page_description = content_for(:meta_description) || "Personal portfolio of Daffa Pradana, a backend engineer specializing in Ruby on Rails." %>
+    <title><%= page_title %></title>
+    <meta name="description" content="<%= page_description %>">
+    <meta property="og:title" content="<%= page_title %>">
+    <meta property="og:description" content="<%= page_description %>">
+    <meta property="og:type" content="<%= content_for(:og_type) || "website" %>">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">

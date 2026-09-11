@@ -1,0 +1,24 @@
+stack:
+  category: "skills"
+  title: "Tech stack"
+  content: "Daffa works mainly in Ruby on Rails with PostgreSQL and Sidekiq."
+  position: 1
+
+experience:
+  category: "experience"
+  title: "Professional experience"
+  content: "Four years as a backend engineer, currently at Happy5."
+  position: 2
+
+contact:
+  category: "personal"
+  title: "Contact details"
+  content: "Reach Daffa by email or on LinkedIn."
+  position: 3
+
+# Deliberately has no position, to cover the NULLS LAST ordering.
+unpositioned:
+  category: "misc"
+  title: "Kubernetes familiarity"
+  content: "Some exposure to Kubernetes on GKE."
+  position: ~

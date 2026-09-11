@@ -1,0 +1,19 @@
+<%#
+  One chat bubble. `role` is :user or :assistant — user messages are
+  right-aligned with no avatar, assistant messages left-aligned with the
+  "AI" avatar, matching the seeded greeting bubble in pages/_chat.html.erb.
+%>
+<% if role == :user %>
+  <div class="flex items-start gap-3 justify-end">
+    <div class="bg-gray-900 text-white rounded-2xl rounded-tr-sm px-4 py-2 text-sm max-w-xs">
+      <%= body %>
+    </div>
+  </div>
+<% else %>
+  <div class="flex items-start gap-3">
+    <div class="flex-shrink-0 w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center text-white text-xs font-bold">AI</div>
+    <div class="bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-2 text-sm text-gray-700 max-w-xs">
+      <%= body %>
+    </div>
+  </div>
+<% end %>
