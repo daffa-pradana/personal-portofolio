@@ -40,6 +40,10 @@ gem "thruster", require: false
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 # gem "image_processing", "~> 1.2"
 
+# Active Storage's built-in S3 service — used in production against
+# Cloudflare R2 (S3-compatible). See config/storage.yml.
+gem "aws-sdk-s3", require: false
+
 group :development, :test do
   # Loads local secrets from .env so they don't have to be prefixed onto every
   # command. Listed first in the group: Bundler.require follows Gemfile order,
