@@ -1,0 +1,41 @@
+<%= form_with model: [ :admin, knowledge_entry ], class: "space-y-6" do |form| %>
+  <% if knowledge_entry.errors.any? %>
+    <div class="py-3 px-4 bg-red-50 text-red-700 rounded-lg text-sm">
+      <p class="font-medium"><%= pluralize(knowledge_entry.errors.count, "error") %> prevented this entry from saving:</p>
+      <ul class="list-disc list-inside mt-1">
+        <% knowledge_entry.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+    <div>
+      <%= form.label :category, class: "block text-sm font-medium text-gray-900" %>
+      <%= form.text_field :category, required: true, placeholder: "experience, skills, education, personal…",
+            class: "block shadow-sm rounded-md border border-gray-300 focus:outline-gray-900 px-3 py-2 mt-2 w-full" %>
+    </div>
+
+    <div>
+      <%= form.label :position, "Position (lower = higher priority)", class: "block text-sm font-medium text-gray-900" %>
+      <%= form.number_field :position, class: "block shadow-sm rounded-md border border-gray-300 focus:outline-gray-900 px-3 py-2 mt-2 w-full" %>
+    </div>
+  </div>
+
+  <div>
+    <%= form.label :title, class: "block text-sm font-medium text-gray-900" %>
+    <%= form.text_field :title, required: true, class: "block shadow-sm rounded-md border border-gray-300 focus:outline-gray-900 px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div>
+    <%= form.label :content, class: "block text-sm font-medium text-gray-900" %>
+    <%= form.text_area :content, required: true, rows: 5,
+          class: "block shadow-sm rounded-md border border-gray-300 focus:outline-gray-900 px-3 py-2 mt-2 w-full" %>
+  </div>
+
+  <div>
+    <%= form.submit class: "rounded-md px-3.5 py-2.5 bg-gray-900 hover:bg-gray-700 text-white text-sm font-medium cursor-pointer" %>
+    <%= link_to "Cancel", admin_knowledge_entries_path, class: "ml-4 text-sm font-medium text-gray-600 hover:text-gray-900" %>
+  </div>
+<% end %>

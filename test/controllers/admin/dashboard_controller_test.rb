@@ -16,5 +16,6 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", text: Article.count.to_s
     assert_select "p", text: Article.published.count.to_s
     assert_select "p", text: Article.draft.count.to_s
+    assert_select "p", text: KnowledgeEntry.count.to_s
   end
 end
