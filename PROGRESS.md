@@ -350,13 +350,18 @@ otherwise the bot itself would eventually tell visitors something false.
       just never checked off here.
 - [ ] Custom domain + SSL on Railway
 - [ ] Final responsive QA across devices
-- [ ] **Trim the chat's prompt cost (deferred deliberately — see below).**
-      Retrieval currently sends the entire knowledge base on every question.
-      Intended fix: cap at roughly the top 6 entries by score, but with a
-      floor that always includes the `contact` entry, so it recovers most of
-      the tokens without reintroducing the starvation bug that made sending
-      everything necessary in the first place. Not urgent: the current cost
-      is free-tier-safe, just with a thinner margin.
+- [x] **Trim the chat's prompt cost** — `KnowledgeRetriever::CAP` (6) plus a
+      `FLOOR_CATEGORY` ("contact") guarantee: top 6 by score, with the best
+      contact-category entry force-included if it didn't already make the
+      cut. Measured **1,439 → 741 avg tokens/question (-48%)** across the
+      same 6 sample questions used in the original measurement below;
+      contact present in all 6, versus previously present in 0-2. Verified
+      the floor with a fixture set of 10 unrelated "skills" entries that all
+      outscore a synthetic contact entry — it's still returned.
+      Fixed a real drift while touching this: the *test fixture's* contact
+      entry used category `"personal"`, left over from before Daffa's
+      knowledge-base rewrite to category `"contact"` — silently untested
+      against the category the real seed data actually uses.
 
 ### Chat token cost — measured, and why it is on the deferred list
 
@@ -392,9 +397,17 @@ Groq free tier for `openai/gpt-oss-120b`: **8K tokens/min, 200K tokens/day,
 Switching to `gpt-oss-20b` does **not** help — identical free-tier limits.
 Trimming entry verbosity would (entries average 59 words).
 
-Verdict: still free, no billing risk, and 126 questions/day is plenty for a
-personal site. The scenario that would actually bite is demoing the site to
-several people at once. Revisit after the current batches.
+**Update (2026-09-11): trimmed.** `CAP` + `FLOOR_CATEGORY` (see checklist
+above) brought the average down to **741 tokens/question**, a ~48% cut. At
+~891 tokens/question including a typical answer:
+
+- ~**9** questions/minute before TPM caps (was ~5, originally ~16)
+- ~**224** questions/day before TPD caps (was ~126, originally ~398)
+
+Not back to the original margin — the knowledge base itself is larger now
+than the 8-entry original — but comfortably free-tier-safe again, and
+contact info is now *guaranteed* reachable on every question rather than
+merely likely.
 
 ## Batch 5 (Optional/Future)
 

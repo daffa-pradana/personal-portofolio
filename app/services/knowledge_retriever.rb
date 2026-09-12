@@ -3,17 +3,18 @@
 # few dozen short entries about one person, so scoring beats similarity
 # search here — and it needs no extra service, gem, or vector column.
 #
-# Scoring ORDERS the entries; it does not filter them. That distinction is the
-# whole design. Filtering out zero-scoring entries seems obviously right and is
-# actively harmful at this scale: keyword overlap between a short question and
-# a short entry is sparse, so "What projects has Daffa worked on?" scored only
-# 2 of 13 entries and "is he any good?" scored 1 — starving the model of
-# context while a nonsense question, which matched nothing and hit the
-# everything-fallback, got all 13. The contact details were absent from almost
-# every prompt, even though the system prompt is told to point visitors there.
+# Scoring ranks entries; it never excludes a zero-scoring one outright — that
+# was tried and was actively harmful at this scale: keyword overlap between a
+# short question and a short entry is sparse, so "What projects has Daffa
+# worked on?" scored only 2 of 13 entries and "is he any good?" scored 1,
+# starving the model of context.
 #
-# Since the entire base is ~1,300 tokens (see MAX_ENTRIES), the cheap and
-# better answer is to send all of it, best-ranked first, and let the model pick.
+# CAP then trims the ranked list to a prompt-sized slice, with FLOOR_CATEGORY
+# guaranteed a seat even if its score didn't earn one — the system prompt
+# tells the model to point visitors to contact info, so it must always be
+# reachable. This is the top-N-plus-floor design deferred in PROGRESS.md
+# after "send the whole base" (measured ~1,439 tokens/question) turned out to
+# be overkill once the base grew past a handful of entries.
 class KnowledgeRetriever
   # Words that would match nearly every entry and so carry no signal.
   STOP_WORDS = %w[
@@ -24,46 +25,48 @@ class KnowledgeRetriever
   # Anything shorter is noise ("is", "do") once stop words are removed.
   MIN_TERM_LENGTH = 3
 
-  # Safety valve against an unbounded knowledge base, NOT a cost control.
-  #
-  # This was originally 8 — which silently became a real cap the moment the
-  # knowledge base grew past 8 entries, truncating the tail. Because entries
-  # carry no `position`, the tail is just insertion order, so the last entry
-  # in the YAML got dropped first: the contact details, which the system
-  # prompt explicitly tells the model to point visitors toward.
-  #
-  # Measured at 13 entries: the entire knowledge base is ~770 words / ~1,300
-  # tokens, and the full system prompt around it ~1,400. That is negligible
-  # for any current model, so there is no reason to truncate a person-scale
-  # knowledge base at all. This number exists only so the prompt can't grow
-  # without limit if the base ever balloons.
-  #
-  # knowledge_retriever_test.rb asserts this stays >= the shipped seed file's
-  # entry count, so outgrowing it fails loudly instead of silently degrading.
-  MAX_ENTRIES = 25
+  # How many entries actually reach the prompt. 6 was the number logged in
+  # PROGRESS.md's deferred plan — small enough to matter for token cost
+  # (measured: sending all 13 averaged ~1,439 tokens/question against Groq's
+  # free-tier 8K TPM), generous enough that the top-ranked matches for a
+  # real question all fit alongside the guaranteed floor entry below.
+  CAP = 6
+
+  # Always occupies one of the CAP seats, regardless of score, because the
+  # system prompt is told to redirect visitors to contact info — an answer
+  # that can't cite it defeats that instruction. If more than one entry ever
+  # shares this category, the highest-ranked one wins the seat.
+  FLOOR_CATEGORY = "contact"
 
   def initialize(scope: KnowledgeEntry.all)
     @scope = scope
   end
 
-  # Returns entries to ground the answer in, most relevant first, capped at
-  # MAX_ENTRIES. Never returns fewer than the whole base while it fits: the
-  # model always sees everything known about Daffa, ordered by relevance.
+  # Returns up to CAP entries to ground the answer in, most relevant first,
+  # with FLOOR_CATEGORY's best match always included.
   def retrieve(question)
     entries = @scope.ordered.to_a
     return [] if entries.empty?
 
     terms = terms_in(question)
-    return entries.first(MAX_ENTRIES) if terms.empty?
 
     # Index is an explicit tiebreaker rather than a reliance on sort stability
     # — Ruby does not guarantee sort_by is stable, so equal scores could
-    # otherwise reorder between identical requests. Falling back to `ordered`'s
-    # position keeps repeated questions deterministic.
-    entries.each_with_index
-           .sort_by { |entry, index| [ -score(entry, terms), index ] }
-           .first(MAX_ENTRIES)
-           .map(&:first)
+    # otherwise reorder between identical requests. With no terms (blank
+    # question, or only stop words) every score is 0, so this reduces to
+    # `ordered`'s curated position — no separate blank-question case needed.
+    ranked = entries.each_with_index
+                    .sort_by { |entry, index| [ -score(entry, terms), index ] }
+                    .map(&:first)
+
+    top = ranked.first(CAP)
+    floor_entry = ranked.find { |entry| entry.category.to_s.casecmp?(FLOOR_CATEGORY) }
+
+    if floor_entry && !top.include?(floor_entry)
+      top = top.first(CAP - 1) + [ floor_entry ]
+    end
+
+    top
   end
 
   private
