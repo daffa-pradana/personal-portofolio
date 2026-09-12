@@ -373,6 +373,30 @@ otherwise the bot itself would eventually tell visitors something false.
       knowledge-base rewrite to category `"contact"` — silently untested
       against the category the real seed data actually uses.
 
+## Batch 5: Content Finalization (paused — waiting on Daffa)
+
+Inserted ahead of the Railway redeploy: Daffa wants every case study's real
+cover image and full write-up in place first, since access to this work
+account/repo may end without notice. Which projects actually get featured is
+still his call — nothing below is locked in, seeded articles are placeholders
+until he's done his own research. Audited 2026-09-12:
+
+| Slot | Cover image | Body |
+|---|---|---|
+| Project/Case Study 1 | attached | placeholder (41 chars) |
+| Project/Case Study 2 | missing | empty |
+| Project/Case Study 3 | missing | empty |
+
+- [ ] Daffa to finish researching which projects to feature and gather real
+      cover images + full write-ups
+- [ ] Cover image for every published case study
+- [ ] Full body content for every published case study (currently only
+      stubs/placeholders)
+- [ ] Confirm final project list/order once content is ready
+
+Custom domain + SSL (previous Batch 4 item) waits until this batch is done —
+no point pointing a real domain at placeholder content.
+
 ### Chat token cost — measured, and why it is on the deferred list
 
 Measured 2026-08-23 after the knowledge base rewrite, because the two
