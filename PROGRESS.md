@@ -348,8 +348,18 @@ otherwise the bot itself would eventually tell visitors something false.
 - [x] GitHub Actions CI pipeline — was already done since Batch 1
       (`.github/workflows/ci.yml`: lint/scan_ruby/scan_js/test on every PR),
       just never checked off here.
-- [ ] Custom domain + SSL on Railway
-- [ ] Final responsive QA across devices
+- [ ] Custom domain + SSL on Railway — blocked, Railway deploy paused since
+      2026-08-08; first step is resuming it (Daffa is subscribing to the
+      Hobby plan)
+- [x] Final responsive QA across devices — checked desktop (1024px), tablet
+      (800px), and mobile (iPhone SE, 375px) across the landing page,
+      `/articles`, an article show page, and the whole admin section. One
+      real bug found: the admin nav's brand/links/sign-out didn't wrap below
+      `sm`, overlapping on narrow screens — fixed with `flex-wrap` + explicit
+      `order` utilities. Hit a `button_to` gotcha along the way: its `class:`
+      option styles the inner `<button>`, not the `<form>` that's actually
+      the flex child — needed `form: { class: ... }` for order/margin to
+      apply. Everything else passed as-is.
 - [x] **Trim the chat's prompt cost** — `KnowledgeRetriever::CAP` (6) plus a
       `FLOOR_CATEGORY` ("contact") guarantee: top 6 by score, with the best
       contact-category entry force-included if it didn't already make the
