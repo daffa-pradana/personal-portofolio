@@ -14,19 +14,20 @@
 
   <body class="bg-gray-50 min-h-screen">
     <nav class="bg-white border-b border-gray-200">
-      <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-        <div class="flex items-center gap-8">
-          <%= link_to "Admin", admin_root_path, class: "text-lg font-bold text-gray-900 tracking-tight" %>
+      <div class="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:h-16 flex flex-wrap sm:flex-nowrap items-center gap-x-6 gap-y-3">
+        <%= link_to "Admin", admin_root_path, class: "order-1 text-lg font-bold text-gray-900 tracking-tight" %>
 
-          <ul class="flex items-center gap-6 text-sm font-medium text-gray-600">
-            <li><%= link_to "Dashboard", admin_root_path, class: "hover:text-gray-900 transition-colors" %></li>
-            <li><%= link_to "Articles", admin_articles_path, class: "hover:text-gray-900 transition-colors" %></li>
-            <li><%= link_to "Knowledge", admin_knowledge_entries_path, class: "hover:text-gray-900 transition-colors" %></li>
-            <li><%= link_to "Settings", admin_site_settings_path, class: "hover:text-gray-900 transition-colors" %></li>
-          </ul>
-        </div>
+        <%# form: (not class:) — button_to's class: styles the inner <button>, but the <form> is the flex child. %>
+        <%= button_to "Sign out", session_path, method: :delete,
+              form: { class: "order-2 sm:order-3 ml-auto shrink-0" },
+              class: "text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors bg-transparent cursor-pointer" %>
 
-        <%= button_to "Sign out", session_path, method: :delete, class: "text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors bg-transparent cursor-pointer" %>
+        <ul class="order-3 sm:order-2 w-full sm:w-auto flex items-center gap-6 text-sm font-medium text-gray-600 overflow-x-auto whitespace-nowrap">
+          <li><%= link_to "Dashboard", admin_root_path, class: "hover:text-gray-900 transition-colors" %></li>
+          <li><%= link_to "Articles", admin_articles_path, class: "hover:text-gray-900 transition-colors" %></li>
+          <li><%= link_to "Knowledge", admin_knowledge_entries_path, class: "hover:text-gray-900 transition-colors" %></li>
+          <li><%= link_to "Settings", admin_site_settings_path, class: "hover:text-gray-900 transition-colors" %></li>
+        </ul>
       </div>
     </nav>
 
