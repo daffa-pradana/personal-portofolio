@@ -348,8 +348,18 @@ otherwise the bot itself would eventually tell visitors something false.
 - [x] GitHub Actions CI pipeline — was already done since Batch 1
       (`.github/workflows/ci.yml`: lint/scan_ruby/scan_js/test on every PR),
       just never checked off here.
-- [ ] Custom domain + SSL on Railway
-- [ ] Final responsive QA across devices
+- [ ] Custom domain + SSL on Railway — blocked, Railway deploy paused since
+      2026-08-08; first step is resuming it (Daffa is subscribing to the
+      Hobby plan)
+- [x] Final responsive QA across devices — checked desktop (1024px), tablet
+      (800px), and mobile (iPhone SE, 375px) across the landing page,
+      `/articles`, an article show page, and the whole admin section. One
+      real bug found: the admin nav's brand/links/sign-out didn't wrap below
+      `sm`, overlapping on narrow screens — fixed with `flex-wrap` + explicit
+      `order` utilities. Hit a `button_to` gotcha along the way: its `class:`
+      option styles the inner `<button>`, not the `<form>` that's actually
+      the flex child — needed `form: { class: ... }` for order/margin to
+      apply. Everything else passed as-is.
 - [x] **Trim the chat's prompt cost** — `KnowledgeRetriever::CAP` (6) plus a
       `FLOOR_CATEGORY` ("contact") guarantee: top 6 by score, with the best
       contact-category entry force-included if it didn't already make the
@@ -362,6 +372,30 @@ otherwise the bot itself would eventually tell visitors something false.
       entry used category `"personal"`, left over from before Daffa's
       knowledge-base rewrite to category `"contact"` — silently untested
       against the category the real seed data actually uses.
+
+## Batch 5: Content Finalization (paused — waiting on Daffa)
+
+Inserted ahead of the Railway redeploy: Daffa wants every case study's real
+cover image and full write-up in place first, since access to this work
+account/repo may end without notice. Which projects actually get featured is
+still his call — nothing below is locked in, seeded articles are placeholders
+until he's done his own research. Audited 2026-09-12:
+
+| Slot | Cover image | Body |
+|---|---|---|
+| Project/Case Study 1 | attached | placeholder (41 chars) |
+| Project/Case Study 2 | missing | empty |
+| Project/Case Study 3 | missing | empty |
+
+- [ ] Daffa to finish researching which projects to feature and gather real
+      cover images + full write-ups
+- [ ] Cover image for every published case study
+- [ ] Full body content for every published case study (currently only
+      stubs/placeholders)
+- [ ] Confirm final project list/order once content is ready
+
+Custom domain + SSL (previous Batch 4 item) waits until this batch is done —
+no point pointing a real domain at placeholder content.
 
 ### Chat token cost — measured, and why it is on the deferred list
 
