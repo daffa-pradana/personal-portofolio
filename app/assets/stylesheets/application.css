@@ -39,7 +39,8 @@
 .article-body .trix-content ul,
 .article-body .trix-content ol,
 .article-body .trix-content blockquote,
-.article-body .trix-content pre {
+.article-body .trix-content pre,
+.article-body .trix-content table {
   margin-top: 1.3em;
 }
 
@@ -73,4 +74,35 @@
 
 .article-body .trix-content img {
   border-radius: 10px;
+}
+
+.article-body .trix-content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85em;
+}
+
+.article-body .trix-content th,
+.article-body .trix-content td {
+  border: 1px solid #e2e8f0;
+  padding: 10px 14px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.article-body .trix-content th {
+  background: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  white-space: nowrap;
+}
+
+/* Diagrams replace their own pre content with an inline SVG once
+ * mermaid_controller.js runs — drop the code-block chrome so what's left
+ * is just the diagram, not a monospace box around one. */
+.article-body .trix-content pre.mermaid {
+  background: none;
+  border: none;
+  padding: 0;
+  overflow-x: auto;
+  text-align: center;
 }

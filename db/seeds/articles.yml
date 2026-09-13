@@ -1,20 +1,96 @@
-- title: "H5 – Jira Project Integration"
+- title: "Architecting a Jira Sync Engine for an Enterprise OKR Platform"
   slug: "h5-jira-project-integration"
   subtitle: >
-    Built a seamless integration between Happy5 and Jira, enabling teams to sync OKR tasks
-    with Jira issues. Reduced context-switching and improved project tracking adoption
-    across enterprise clients.
+    Designed and owned the domain layer of Happy5 Performance's Jira integration,
+    the sync engine that turns Jira projects, issues and workflow states into
+    enterprise OKR goals, tasks, ownership and live progress. Still the production
+    code path four years later.
   article_type: case_study
   status: published
   tags:
     - "Ruby on Rails"
-    - "REST API"
-    - "Jira API"
+    - "Jira REST API"
     - "Sidekiq"
+    - "ActionCable"
     - "PostgreSQL"
   button_label: "Product Page"
   button_url: "https://www.happy5.co/product/project-management-tracker"
   position: 1
+  body: |
+    <h2>At a glance</h2>
+    <table>
+      <tbody>
+        <tr><th>Product</th><td>Happy5 Performance, a multi-tenant enterprise OKR and performance-management SaaS</td></tr>
+        <tr><th>My role</th><td>Backend engineer, sole owner of the integration's domain layer</td></tr>
+        <tr><th>Duration</th><td>Eight months</td></tr>
+        <tr><th>Stack</th><td>Ruby on Rails, Jira REST API, Sidekiq, ActionCable, PostgreSQL</td></tr>
+        <tr><th>Still running</th><td>The core design is still the production code path four years later</td></tr>
+      </tbody>
+    </table>
+
+    <h2>The one-sentence version</h2>
+    <p>I designed the layer that decides what a Jira project <em>means</em> inside an OKR platform: how issues become goals, how workflow states become measurable progress, how Jira's people become accountable owners.</p>
+
+    <h2>The problem</h2>
+    <p>"Integrate with Jira" sounds like an afternoon of REST calls. The demo is easy: pick a project, pick a goal, draw a line between them.</p>
+    <p>The reality is that an OKR platform and an issue tracker disagree about almost everything they model: hierarchy, progress, ownership, and who's actually in charge. The integration is where those disagreements get resolved into a single number a director looks at in a quarterly review.</p>
+    <pre class="mermaid">
+    flowchart LR
+        subgraph JIRA["Jira Cloud"]
+            J1["Project → Epic → Task →&lt;br/&gt;Subtask (3 levels below project)"]
+            J2["Arbitrary workflow statuses&lt;br/&gt;'In Review', 'QA', 'Blocked'…"]
+            J3["Lead, Administrator, Member,&lt;br/&gt;Viewer, Assignee, Reporter, Watcher"]
+            J4["Jira is the source of truth&lt;br/&gt;…or is it?"]
+        end
+        subgraph H5["Happy5 Performance"]
+            H1["Project → Task&lt;br/&gt;(2 levels, hard validation)"]
+            H2["A percentage.&lt;br/&gt;Rolled up from child records&lt;br/&gt;in our own database."]
+            H3["Leader, Assignee, Reviewer,&lt;br/&gt;PMO, Stakeholder&lt;br/&gt;(drives approval + review flows)"]
+            H4["Customers each have&lt;br/&gt;a different opinion"]
+        end
+        J1 -.->|"hierarchy&lt;br/&gt;boundary"| H1
+        J2 -.->|"progress&lt;br/&gt;boundary"| H2
+        J3 -.->|"identity + role&lt;br/&gt;boundary"| H3
+        J4 -.->|"authority&lt;br/&gt;boundary"| H4
+    </pre>
+
+    <h2>How it's built</h2>
+    <p>The integration is a Rails service sitting between the two systems. Jira Cloud pushes updates through webhooks and exposes a REST API for pulling project and issue data. A background layer built on Sidekiq does the actual translation, mapping Jira's projects, issues and workflow states into Happy5's goals, tasks and ownership, so a sync never blocks a web request the user is waiting on. Once a sync finishes, ActionCable pushes the result to the browser live, and everything lands in PostgreSQL alongside the rest of the platform's data.</p>
+    <pre class="mermaid">
+    sequenceDiagram
+        participant U as User
+        participant API as Rails API
+        participant Q as Sidekiq
+        participant J as Jira REST
+        participant WS as ActionCable
+
+        U->>API: Link a Jira project
+        API->>API: validate &amp; persist the link
+        API-->>U: 202 Accepted
+        Note over U,API: request ends here
+
+        API->>Q: enqueue sync job
+        Q->>J: fetch project / issue data
+        J-->>Q: payload
+        Q->>Q: map Jira data into OKR goals
+        Q->>Q: apply tenant configuration
+        Q->>Q: persist changes
+        Q->>Q: enqueue roll-up (progress) job
+        Q->>Q: import sub-items (if requested)
+        Q->>WS: broadcast result
+        WS-->>U: UI updates live
+    </pre>
+    <p>Linking a real project used to run synchronously: fetch the project, its roles, every issue, every issue's watchers, then write it all back. Fine in a demo, far too slow against a large tenant. Moving it off the request path bought speed, but it also meant a lesson worth keeping: async buys you latency, not correctness. The steps above have to run in a strict order, or a child item can get created before its parent has finished syncing. Making something async is a design decision with its own failure modes, not a free performance win.</p>
+
+    <h2>Key takeaways</h2>
+    <ul>
+      <li>Translate a foreign system's state into your own domain in one isolated layer. Don't let a partner's concepts leak into abstractions the rest of your platform depends on.</li>
+      <li>When two systems model identity or ownership differently, define an explicit precedence order rather than a simple lookup table.</li>
+      <li>Let customers configure where they disagree with your defaults, instead of forking behavior per client.</li>
+      <li>Async trades latency for an ordering guarantee you now have to design and enforce yourself.</li>
+    </ul>
+
+    <p><em>Backend engineer on Happy5 Performance, 2021 to present.</em></p>
 
 - title: "H5 – Goal Custom Order"
   slug: "h5-goal-custom-order"

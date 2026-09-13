@@ -109,6 +109,13 @@ class ArticleTest < ActiveSupport::TestCase
     assert_equal 5, article.reading_time
   end
 
+  test "excludes mermaid diagram source from the reading time word count" do
+    diagram = "flowchart LR\n#{words(400)}"
+    article = Article.create!(title: "Diagram Post", body: "<p>#{words(200)}</p><pre class=\"mermaid\">#{diagram}</pre>")
+
+    assert_equal 1, article.reading_time
+  end
+
   test "clears reading time when the body is emptied" do
     article = Article.create!(title: "Emptied Post", body: "<p>#{words(400)}</p>")
     assert_equal 2, article.reading_time
@@ -133,6 +140,29 @@ class ArticleTest < ActiveSupport::TestCase
 
   test "has no cover image by default" do
     assert_not articles(:goal_custom_order).cover_image.attached?
+  end
+
+  test "cover_image_variant returns a processed variant for a raster image" do
+    article = articles(:jira_integration)
+    article.cover_image.attach(
+      io: file_fixture("cover_image.png").open,
+      filename: "cover_image.png",
+      content_type: "image/png"
+    )
+
+    assert_kind_of ActiveStorage::VariantWithRecord, article.cover_image_variant(:thumb)
+  end
+
+  test "cover_image_variant falls back to the original blob for an SVG, which Active Storage can't transform" do
+    article = articles(:jira_integration)
+    article.cover_image.attach(
+      io: file_fixture("cover_image.svg").open,
+      filename: "cover_image.svg",
+      content_type: "image/svg+xml"
+    )
+
+    assert_equal article.cover_image, article.cover_image_variant(:thumb)
+    assert_raises(ActiveStorage::InvariableError) { article.cover_image.variant(:thumb) }
   end
 
   private

@@ -383,12 +383,21 @@ until he's done his own research. Audited 2026-09-12:
 
 | Slot | Cover image | Body |
 |---|---|---|
-| Project/Case Study 1 | attached | placeholder (41 chars) |
+| Project/Case Study 1 (`h5-jira-project-integration`) | ✅ real (`h5-jira-cover.svg`) | ✅ full write-up, 2026-09-13 |
 | Project/Case Study 2 | missing | empty |
 | Project/Case Study 3 | missing | empty |
 
+- [x] ~~Research + write-up for the Jira integration case study~~ — done
+      2026-09-13, from Daffa's own research pack at
+      `tmp/jira-integration-case-study/` (git-ignored, his input, not
+      committed). Title/subtitle rewritten from the research's suggested
+      framing (old copy was generic marketing filler); client names kept
+      anonymised per Daffa's call, matching the source article's own
+      convention. See "Jira case study: content + Mermaid diagram support"
+      in the session log below — this pulled in real infrastructure changes
+      (Mermaid.js, a sanitizer fix, an SVG-variant fix), not just content.
 - [ ] Daffa to finish researching which projects to feature and gather real
-      cover images + full write-ups
+      cover images + full write-ups for the remaining two slots
 - [ ] Cover image for every published case study
 - [ ] Full body content for every published case study (currently only
       stubs/placeholders)
@@ -465,6 +474,207 @@ merely likely.
 ## Session Log
 
 Brief notes per work session — what got done, what decisions were made, what's blocked.
+
+### 2026-09-13 — Jira case study: content + Mermaid diagram support
+
+Completed the first Batch 5 slot: the `h5-jira-project-integration` article
+now has its real body and cover image, sourced from Daffa's own research pack
+at `tmp/jira-integration-case-study/` (git-ignored — his input, not repo
+content). Three decisions were his call, asked up front: keep client names
+anonymised (the source article already did — Telkom/MiFX/Sirclo never
+actually appear in `07-CASE-STUDY-ARTICLE.md`, only in the supporting
+research files), render the draft's 9 Mermaid diagrams as real diagrams
+rather than dropping them, and update the title/subtitle to the research's
+stronger framing (old copy was generic marketing filler inconsistent with
+the rest of the piece).
+
+That diagram choice pulled in more than content:
+
+- **Mermaid via importmap, pinned to jsdelivr directly.** `bin/importmap pin
+  mermaid` fails — jspm.io's `generate` API can't resolve mermaid's own
+  dependency tree (confirmed directly against `api.jspm.io/generate`, not
+  just inferred from the CLI failure). Worked around by pinning mermaid's
+  self-contained ESM bundle straight from jsdelivr
+  (`mermaid@11.17.2/dist/mermaid.esm.min.mjs`); its only imports are relative
+  `./chunks/...` paths the browser resolves against that same URL, so
+  nothing else needed pinning. New `mermaid_controller.js` (Stimulus) calls
+  `mermaid.run()` on any `pre.mermaid` inside the element it's attached to;
+  wired onto `.article-body` in the show page. `securityLevel: "loose"` is
+  deliberate — the diagrams use `<br/>` inside node labels for line breaks,
+  which the "strict" default escapes into literal text instead of rendering.
+  Safe here since article bodies are admin-authored, never visitor input.
+- **Action Text silently drops `<table>`.** Discovered by curling the
+  rendered page: two tables in the draft (an "at a glance" summary, a
+  config-value reference) came out as run-on text with no cells, no error.
+  Root cause: Rails' safe-list sanitizer's default allowlist has no
+  table/tr/th/td (confirmed by checking `ActionText::ContentHelper
+  .sanitizer.class` directly — it resolves to `Rails::HTML4::SafeListSanitizer`
+  even though `config.action_text.sanitizer_vendor` says HTML5, apparently a
+  fallback). Fixed in `config/initializers/rich_text_sanitizer.rb`, widening
+  the allowlist on both HTML4 and HTML5 safe-list sanitizer classes since
+  either could be the one actually resolved. Table tags were present in the
+  raw DB column the whole time — the strip happens at render, not at save,
+  which is why this wasn't visible from the console alone.
+- **SVG covers can't get Active Storage variants.** `article.cover_image
+  .variant(:hero)` on the new SVG raised `ActiveStorage::InvariableError`
+  immediately (not lazily on first process) — `image/svg+xml` isn't in
+  `ActiveStorage.variable_content_types`. Rather than rasterize the SVG (no
+  libvips/rsvg-convert/imagemagick available locally to do that, and no sudo
+  to install one), added `Article#cover_image_variant(name)`: returns the
+  named variant for anything Active Storage can transform, the original blob
+  otherwise. SVGs don't need a resized derivative anyway — they're already
+  resolution-independent. All three render sites (card partial, admin form
+  preview, show page) now call this instead of `.variant` directly.
+- **Cover images now seed by convention, not by a YAML field.** Action Text
+  and Active Storage attachments can't be expressed as YAML values, so
+  `db/seeds/images/<slug>.<ext>` auto-attaches to the matching `Article` —
+  added to `seeds.rb`, only when nothing is attached yet (same
+  don't-clobber-a-CMS-upload reasoning as `SiteSetting`'s
+  `update_existing: false`). The dev DB already had a generic placeholder
+  cover attached to this article from earlier scaffolding, which is exactly
+  the case that guard is for — the real cover was attached with a one-off
+  `rails runner` command instead, deliberately not by changing the seed
+  logic to force-overwrite.
+- **Verified beyond the test suite**, since none of this is exercised by
+  existing tests: booted the dev server, curled the real rendered page (not
+  just the DB row) after each fix to confirm tables/mermaid-blocks/cover-image
+  actually reached the HTML, and confirmed the generated importmap script
+  really contains the `mermaid` and `controllers/mermaid_controller` entries
+  a browser would load. Couldn't get an actual browser screenshot — no
+  chromium-cli, no system Chromium, and `npx playwright` fails (its browser
+  download step hits a blocked network path; `playwright-core` alone
+  installs fine). Closest available substitute: extracted all 9 diagrams
+  from the seeded YAML, round-tripped the HTML-entity escaping back to raw
+  Mermaid source, and ran them through mermaid's own `parse()` in a headless
+  jsdom environment (`npm i mermaid jsdom` in a scratch dir) — all 9 parse
+  cleanly. Full `render()` failed there on `CSSStyleSheet is not defined`,
+  which is a jsdom gap (constructable stylesheets), not a diagram problem —
+  identical failure on all 9 including the trivial ones, and a real browser
+  has that API natively.
+- Added regression tests: `cover_image_variant` for both the raster and SVG
+  branches, table markup surviving Action Text rendering, and an SVG cover
+  rendering directly on the show page. 149 -> 153 tests (4 new), all green.
+  0 rubocop offenses, 0 brakeman warnings.
+- **Still open:** the other two case-study slots (empty body, no cover) —
+  waiting on Daffa's own research, same as before.
+
+### 2026-09-13 (later — cover image was still broken in a real browser)
+
+Daffa's manual review (the thing the previous entry couldn't do) caught what
+curl-only verification missed: the SVG cover rendered as a broken image icon
+in Chrome, even after the `cover_image_variant` fallback above. Root cause
+was a second, unrelated issue — Rails serves any blob whose content type is
+in `ActiveStorage.content_types_to_serve_as_binary` (`image/svg+xml` is on
+that list by default) with a forced `Content-Type: application/octet-stream`
++ `Content-Disposition: attachment`, regardless of variant support. That's
+deliberate: an inline-rendered SVG can carry a `<script>` tag, so Rails
+won't serve one as a live image unless you opt in via
+`content_types_allowed_inline` — which would apply to every future
+admin-uploaded cover, not just this one, i.e. a real stored-XSS exposure for
+every site visitor if the admin account were ever compromised. Not worth
+loosening app-wide for one cover image.
+
+Fixed by rasterizing the cover to PNG instead (a scratch Node script,
+`sharp` — it bundles its own libvips, no system install needed) and
+re-attaching that. It now flows through the exact same path every other
+cover image already uses, no special-casing needed. Kept
+`Article#cover_image_variant`'s SVG-fallback branch and its test regardless
+— it's still correct, generically defensive behavior for any future
+non-variable attachment, just not exercised by this particular cover anymore.
+
+This also exposed that **local dev has never actually processed a real
+image variant in a browser** — no libvips installed at all, so
+`.variant(...).processed` had simply never been hit outside production.
+Installing Ubuntu jammy's `libvips42` (8.12.1) to fix that made things
+*worse*: Rails 8.1's Active Storage requires libvips 8.13+ (`Vips
+.block_untrusted`) and refuses to boot at all — not just skip variants —
+below that, so the app stopped starting entirely, for anything (console,
+tests, server). Removed it again to restore the documented working state
+(no libvips -> app boots fine, variants just aren't processed locally,
+exactly as before). Real end-to-end rendering was instead verified through
+an isolated libvips 8.18.6 via `micromamba`/conda-forge in `/tmp`, loaded
+only via `LD_LIBRARY_PATH` for that one server process — nothing installed
+on the machine, nothing committed. Both the card `:thumb` (800×500) and
+article `:hero` (1080×675) variants confirmed rendering as real PNGs.
+
+**If real local image-variant testing is wanted again later:** don't
+`apt install libvips42` on Ubuntu jammy — it's the wrong version. Either
+build/fetch libvips >= 8.13 (conda-forge's `libvips` package worked cleanly)
+and point `LD_LIBRARY_PATH` at it per-invocation, or accept the existing
+"only production really processes images" split and rely on Railway for
+final visual confirmation.
+
+### 2026-09-13 (later still — content pass: 14 min → 7 min, timeline cut, takeaway-driven)
+
+Daffa's read of the published draft: too long for the genre (14 min vs. an
+ideal 7-8 for an in-depth technical case study), too much prose narrating
+*what the code did*, and no timeline section — readers want the fruit
+(applicable takeaways) connected to the architecture story, not a rewind of
+when each piece landed.
+
+- **Cut the whole "where I came in" section**, gantt chart included — a
+  professional history timeline, not something a reader can use.
+- **Cut the `RollUp` class diagram and the before/after hierarchy diagram**
+  — both were closer to describing code structure (class names, method
+  signatures) than visualizing the actual architecture decision. Kept the
+  `statusCategory` mapping diagram from the same section instead: it shows
+  the *concept* (three universal categories), not the implementation.
+  9 diagrams → 6, all now genuinely architecture, not code.
+- **Restructured around four explicit "Takeaway:" sections** (pluggable
+  strategy over branching; explicit precedence chains for cross-system
+  identity; configuration over per-customer forks; async trades latency for
+  an ordering guarantee you must design yourself), each closing with an
+  "Applies beyond Jira:" line — the connective tissue Daffa asked for
+  between the specific story and a lesson a reader can actually take away.
+  Added a closing "Key takeaways" recap for skimmers.
+- **Trimmed "what it cost" from four bullets to three** and cut the
+  paragraph-length narration in each decision down to what's needed to
+  understand the diagram next to it, rather than re-explaining it in prose.
+- **Found and fixed a real measurement bug while checking the result:**
+  `reading_time` counted Mermaid diagram *source text* as prose — a reader
+  sees a rendered diagram there, never that syntax, so a diagram-heavy
+  article was overcounting. On the *previous* 9-diagram draft this alone was
+  652 of 2,643 words (~25%) that nobody actually reads. Fixed in
+  `Article#calculate_reading_time` by stripping `<pre class="mermaid">`
+  blocks before counting; added a regression test. Combined with the content
+  cut, the article now measures **7 min** (confirmed rendered on the live
+  page, not just computed).
+- 154 tests (+1: the reading-time fix), 0 rubocop offenses, 0 brakeman
+  warnings. All 6 diagrams re-verified through mermaid's `parse()` in the
+  same headless jsdom setup as before.
+
+### 2026-09-13 (later still — second content pass: strip proprietary detail, 7 min → 3 min)
+
+Daffa's next round of feedback on the same article: still too much detail
+readers don't need, and — the real issue — the "Takeaway" sections and the
+big architecture diagram named actual internal implementation (class names,
+job names, config keys) that belongs to the employer, not a public portfolio
+page. He picked out the two diagrams that actually earn their place (the
+four-boundaries problem diagram, the async sequence diagram) and asked for
+everything else to be conceptual, told through those two visuals plus the
+listed tech stack tags, not narrated in prose.
+
+- **Cut all internal naming.** No more `Jira::ObjectiveService`,
+  `RollUp::AverageByJiraPhase`, `Integration::Item`, `SyncIntegrationJob`,
+  `jira_project_mapping`/`sync_objective_reviewer`-style config keys, or PR
+  numbers/line-diff counts. What's left refers to systems and roles
+  (Rails, Sidekiq, Jira REST, ActionCable, PostgreSQL — the actual tag list)
+  rather than this specific codebase's internals.
+- **Diagrams: 6 → 2.** Kept exactly the two he named — the boundary/problem
+  diagram and the async sequence diagram — and genericized the sequence
+  diagram's own step labels the same way (`enqueue sync job` /
+  `enqueue roll-up (progress) job` rather than the real job class names).
+  Cut the "how it's built" and "takeaways" diagrams/sections entirely; the
+  four Takeaway sections collapsed into one short "Key takeaways" list with
+  no code-specific detail.
+- Company/product names (Happy5, Jira, Atlassian) stayed — Daffa's flag was
+  about *his employer's internal implementation*, not the fact that he
+  worked on Jira integration for Happy5, which the CTA button already links
+  to publicly.
+- Reading time: 7 min → **3 min** (confirmed rendered on the live page).
+  Not aiming for a specific number here — this is just what's left once the
+  proprietary and overly-granular detail is gone. 154 tests, 0 rubocop
+  offenses. Both remaining diagrams re-verified through mermaid's `parse()`.
 
 ### 2026-08-23 (later — knowledge base rewrite, and three retrieval bugs it exposed)
 
