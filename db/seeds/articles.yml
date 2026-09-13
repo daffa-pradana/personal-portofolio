@@ -92,12 +92,12 @@
 
     <p><em>Backend engineer on Happy5 Performance, 2021 to present.</em></p>
 
-- title: "H5 – Goal Custom Order"
+- title: "Drag-and-Drop Ordering That Survives Concurrency"
   slug: "h5-goal-custom-order"
   subtitle: >
-    Designed and implemented a drag-to-reorder feature for OKR goals, allowing users to
-    prioritize their objectives. Eliminated N+1 queries in the reordering pipeline and
-    cut response time by 85%.
+    Designed drag-and-drop reordering for OKR goals using gap-based float ranking,
+    so moving one item touches a single row instead of rewriting the list.
+    Hardened with row locking after production exposed a real concurrency race.
   article_type: case_study
   status: published
   tags:
@@ -107,6 +107,62 @@
   button_label: ~
   button_url: ~
   position: 2
+  body: |
+    <h2>At a glance</h2>
+    <table>
+      <tbody>
+        <tr><th>Product</th><td>Happy5 Performance, a multi-tenant enterprise OKR and performance-management SaaS</td></tr>
+        <tr><th>My role</th><td>Backend engineer, designed and hardened the feature end to end</td></tr>
+        <tr><th>Duration</th><td>About a year, from first ship through hardening</td></tr>
+        <tr><th>Stack</th><td>Ruby on Rails, PostgreSQL, Sidekiq</td></tr>
+        <tr><th>Still running</th><td>Hardened after a real production race condition, still the live implementation</td></tr>
+      </tbody>
+    </table>
+
+    <h2>The one-sentence version</h2>
+    <p>I designed a way to let users drag and drop to reorder their goals that stays fast and correct no matter how long the list is or how many people are reordering it at once.</p>
+
+    <h2>The problem</h2>
+    <p>Drag and drop to reorder a list looks trivial until that list is shared across a multi-tenant database under concurrent load. The obvious approach, an integer position per row, means moving one item rewrites every row after it. On a long list that's hundreds of updates for a single drag, and a lock convoy on a table everyone touches at once.</p>
+    <pre class="mermaid">
+    flowchart LR
+        subgraph NAIVE["Integer position"]
+            N1["Move one item"] --> N2["Every row after it&lt;br/&gt;must shift"] --> N3["Writes grow with&lt;br/&gt;list length"]
+        end
+        subgraph GAP["Gap-based float rank"]
+            G1["Move one item"] --> G2["new rank = midpoint of&lt;br/&gt;its two neighbours"] --> G3["One row written,&lt;br/&gt;regardless of list length"]
+        end
+    </pre>
+
+    <h2>How it's built</h2>
+    <p>Each item gets a rank instead of a position, a float that sits between its two neighbours. Inserting an item becomes one row written, not the whole list rewritten. Paginating through the list uses a cursor keyed on that rank rather than an offset, since offset pagination breaks the moment anything moves out from under it. The ranks slowly lose precision as the same region gets split again and again, so a scheduled job periodically re-spreads them back to even gaps rather than checking on every write. Backfilling ranks for existing data runs as a background job too, not a migration, so it never holds a platform-wide transaction open.</p>
+
+    <h2>What production taught me</h2>
+    <p>Months after shipping, two people reordering the same list at the same time exposed a race the design hadn't accounted for.</p>
+    <pre class="mermaid">
+    sequenceDiagram
+        participant A as User A
+        participant B as User B
+        participant DB as Database
+
+        A->>DB: read neighbouring ranks
+        B->>DB: read neighbouring ranks
+        Note over A,B: both compute the same midpoint
+        A->>DB: write new rank
+        B->>DB: write new rank
+        Note over DB: two rows now share an identical rank
+    </pre>
+    <p>The fix was row locking around the read and the write, so a second concurrent reorder waits instead of racing. Reordering is infrequent and user-initiated, so a brief wait costs far less than a silently corrupted order.</p>
+
+    <h2>Key takeaways</h2>
+    <ul>
+      <li>A gap-based ranking scheme turns "insert into an ordered list" into a single write, regardless of list length. The bounded precision drift it trades for that is a fair deal, handled as scheduled maintenance instead of on the hot path.</li>
+      <li>Pagination breaks the moment your sort key can change under the reader. Keying pagination on that same value, not a row offset, keeps it correct.</li>
+      <li>A read-modify-write pattern is safe right up until two callers do it at the same time. If concurrent writes are possible, design the locking up front rather than waiting for production to find the race.</li>
+      <li>Deleting logic that's causing bugs and earning nothing is a valid fix on its own, not just a fallback for when a better idea doesn't come along.</li>
+    </ul>
+
+    <p><em>Backend engineer on Happy5 Performance, 2021 to present.</em></p>
 
 - title: "RAG – AI Chatbot"
   slug: "rag-ai-chatbot"

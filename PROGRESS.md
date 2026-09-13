@@ -383,24 +383,34 @@ until he's done his own research. Audited 2026-09-12:
 
 | Slot | Cover image | Body |
 |---|---|---|
-| Project/Case Study 1 (`h5-jira-project-integration`) | ✅ real (`h5-jira-cover.svg`) | ✅ full write-up, 2026-09-13 |
-| Project/Case Study 2 | missing | empty |
+| Project/Case Study 1 (`h5-jira-project-integration`) | ✅ real (`h5-jira-project-integration.png`) | ✅ full write-up, merged |
+| Project/Case Study 2 (`h5-goal-custom-order`) | ⏳ Daffa generating one | ✅ full write-up, 2026-09-13 |
 | Project/Case Study 3 | missing | empty |
 
 - [x] ~~Research + write-up for the Jira integration case study~~ — done
-      2026-09-13, from Daffa's own research pack at
+      2026-09-13, merged. From Daffa's own research pack at
       `tmp/jira-integration-case-study/` (git-ignored, his input, not
       committed). Title/subtitle rewritten from the research's suggested
       framing (old copy was generic marketing filler); client names kept
       anonymised per Daffa's call, matching the source article's own
-      convention. See "Jira case study: content + Mermaid diagram support"
-      in the session log below — this pulled in real infrastructure changes
-      (Mermaid.js, a sanitizer fix, an SVG-variant fix), not just content.
-- [ ] Daffa to finish researching which projects to feature and gather real
-      cover images + full write-ups for the remaining two slots
-- [ ] Cover image for every published case study
-- [ ] Full body content for every published case study (currently only
-      stubs/placeholders)
+      convention. Went through three rounds of his feedback after the first
+      draft — see the three "Jira case study" session log entries below for
+      what changed and why (content length, proprietary detail, tone). Also
+      pulled in real infrastructure changes along the way: Mermaid.js
+      support, an Action Text sanitizer fix, an SVG-variant fix, and a
+      reading-time calculation fix.
+- [x] ~~Research + write-up for the custom-ordering case study~~ — done
+      2026-09-13, from `tmp/custom-ordering-case-study.md` (git-ignored,
+      Daffa's input). Written directly in the shorter, diagram-forward,
+      no-proprietary-detail style the Jira article converged on after
+      feedback — no PR numbers, job/class names, or Slack/Notion links from
+      the source doc carried into the public page. Cover image not yet
+      attached; Daffa is generating one himself, same convention as the
+      Jira article (`db/seeds/images/h5-goal-custom-order.<ext>` auto-attaches
+      on next `db:seed` once it exists — see `seeds.rb`).
+- [ ] Daffa to finish researching which project goes in the third slot and
+      gather its cover image + write-up
+- [ ] Attach the custom-ordering cover once Daffa has generated it
 - [ ] Confirm final project list/order once content is ready
 
 Custom domain + SSL (previous Batch 4 item) waits until this batch is done —
@@ -675,6 +685,45 @@ listed tech stack tags, not narrated in prose.
   Not aiming for a specific number here — this is just what's left once the
   proprietary and overly-granular detail is gone. 154 tests, 0 rubocop
   offenses. Both remaining diagrams re-verified through mermaid's `parse()`.
+- **Small polish pass on the same article, same day, not logged separately
+  at the time:** removed every em-dash from the body/subtitle (replaced with
+  plain periods/commas/colons — reads less like AI-written prose), and
+  fixed a real CSS gap where `table` was missing from the block-element
+  `margin-top` rule every other tag (`p`/`ul`/`ol`/`blockquote`/`pre`) gets,
+  so a table right under a heading (like "At a glance") had no space above
+  it. Affects every article with a table, not just this one.
+
+### 2026-09-13 (later still — second article: custom-ordering case study)
+
+Same treatment as the Jira article's *final* converged style (short,
+diagram-forward, no proprietary detail) applied directly from the start
+this time, from `tmp/custom-ordering-case-study.md` (git-ignored, Daffa's
+research). Skipped the three-round trim this file went through for the
+Jira article — went straight to the end state: 2 diagrams, no PR
+numbers/job-class-names/Slack-Notion-links from the source doc, no
+em-dashes, a short "Key takeaways" list.
+
+- Title/subtitle rewritten from the source doc's own framing ("Drag-and-drop
+  ordering that survives concurrency" was too good a phrase not to reuse as
+  the title). `tags` kept as already seeded (Ruby on Rails, PostgreSQL,
+  Sidekiq) — accurate to the source doc's stack.
+- The two diagrams: a naive-vs-gap-based-ranking comparison (the core "why
+  this is hard, here's the design" insight) and a sequence diagram of the
+  concurrency race production actually hit (two concurrent reorders
+  computing the same midpoint). Both generic — no real class/job names,
+  matching the constraint from the Jira article's second content pass.
+  Both re-verified through mermaid's `parse()` in the same headless jsdom
+  setup used for the Jira article.
+- **Cover image not yet attached** — Daffa is generating one himself. Once
+  it exists, dropping it at `db/seeds/images/h5-goal-custom-order.<ext>`
+  auto-attaches on the next `db:seed`, same convention as the Jira cover
+  (see `seeds.rb`); no code change needed for that step. If it's an SVG,
+  expect the same `image/svg+xml` → forced-download issue hit on the Jira
+  cover, and the same fix (rasterize to PNG) — see the "cover image was
+  still broken in a real browser" entry above for why.
+- Reading time: **3 min**, confirmed rendered on the live page. 154 tests,
+  0 rubocop offenses, 0 brakeman warnings (no new tests needed — no new
+  application code, just seed content).
 
 ### 2026-08-23 (later — knowledge base rewrite, and three retrieval bugs it exposed)
 
