@@ -643,6 +643,39 @@ when each piece landed.
   warnings. All 6 diagrams re-verified through mermaid's `parse()` in the
   same headless jsdom setup as before.
 
+### 2026-09-13 (later still — second content pass: strip proprietary detail, 7 min → 3 min)
+
+Daffa's next round of feedback on the same article: still too much detail
+readers don't need, and — the real issue — the "Takeaway" sections and the
+big architecture diagram named actual internal implementation (class names,
+job names, config keys) that belongs to the employer, not a public portfolio
+page. He picked out the two diagrams that actually earn their place (the
+four-boundaries problem diagram, the async sequence diagram) and asked for
+everything else to be conceptual, told through those two visuals plus the
+listed tech stack tags, not narrated in prose.
+
+- **Cut all internal naming.** No more `Jira::ObjectiveService`,
+  `RollUp::AverageByJiraPhase`, `Integration::Item`, `SyncIntegrationJob`,
+  `jira_project_mapping`/`sync_objective_reviewer`-style config keys, or PR
+  numbers/line-diff counts. What's left refers to systems and roles
+  (Rails, Sidekiq, Jira REST, ActionCable, PostgreSQL — the actual tag list)
+  rather than this specific codebase's internals.
+- **Diagrams: 6 → 2.** Kept exactly the two he named — the boundary/problem
+  diagram and the async sequence diagram — and genericized the sequence
+  diagram's own step labels the same way (`enqueue sync job` /
+  `enqueue roll-up (progress) job` rather than the real job class names).
+  Cut the "how it's built" and "takeaways" diagrams/sections entirely; the
+  four Takeaway sections collapsed into one short "Key takeaways" list with
+  no code-specific detail.
+- Company/product names (Happy5, Jira, Atlassian) stayed — Daffa's flag was
+  about *his employer's internal implementation*, not the fact that he
+  worked on Jira integration for Happy5, which the CTA button already links
+  to publicly.
+- Reading time: 7 min → **3 min** (confirmed rendered on the live page).
+  Not aiming for a specific number here — this is just what's left once the
+  proprietary and overly-granular detail is gone. 154 tests, 0 rubocop
+  offenses. Both remaining diagrams re-verified through mermaid's `parse()`.
+
 ### 2026-08-23 (later — knowledge base rewrite, and three retrieval bugs it exposed)
 
 Daffa rewrote `db/seeds/knowledge_entries.yml` himself with current,

@@ -1,11 +1,10 @@
 - title: "Architecting a Jira Sync Engine for an Enterprise OKR Platform"
   slug: "h5-jira-project-integration"
   subtitle: >
-    Designed and owned the domain layer of Happy5 Performance's Jira integration:
+    Designed and owned the domain layer of Happy5 Performance's Jira integration —
     the sync engine that turns Jira projects, issues and workflow states into
-    enterprise OKR goals, tasks, ownership and live progress. Nineteen PRs across
-    eight months — the core roll-up strategy shipped in October 2022 is still the
-    production code path four years later.
+    enterprise OKR goals, tasks, ownership and live progress. Still the production
+    code path four years later.
   article_type: case_study
   status: published
   tags:
@@ -23,22 +22,22 @@
       <tbody>
         <tr><th>Product</th><td>Happy5 Performance, a multi-tenant enterprise OKR and performance-management SaaS</td></tr>
         <tr><th>My role</th><td>Backend engineer, sole owner of the integration's domain layer</td></tr>
-        <tr><th>Duration</th><td>September 2022 to May 2023, eight months</td></tr>
-        <tr><th>Shipped</th><td>19 merged pull requests, ~6,800 lines</td></tr>
-        <tr><th>Still running</th><td>The progress roll-up strategy I wrote in October 2022 is the production code path today, four years later</td></tr>
+        <tr><th>Duration</th><td>Eight months</td></tr>
+        <tr><th>Stack</th><td>Ruby on Rails, Jira REST API, Sidekiq, ActionCable, PostgreSQL</td></tr>
+        <tr><th>Still running</th><td>The core design is still the production code path four years later</td></tr>
       </tbody>
     </table>
 
     <h2>The one-sentence version</h2>
-    <p>I designed the layer that decides what a Jira project <em>means</em> inside an OKR platform: how issues become goals, how workflow states become measurable progress, how Jira's people become accountable owners, and how much of that each customer gets to disagree with.</p>
+    <p>I designed the layer that decides what a Jira project <em>means</em> inside an OKR platform: how issues become goals, how workflow states become measurable progress, how Jira's people become accountable owners.</p>
 
     <h2>The problem</h2>
     <p>"Integrate with Jira" sounds like an afternoon of REST calls. The demo is easy: pick a project, pick a goal, draw a line between them.</p>
-    <p>The reality is that an OKR platform and an issue tracker disagree about almost everything — hierarchy depth, what "progress" even means, who owns what. The integration is the place those disagreements get resolved into a single number a director looks at in a quarterly review.</p>
+    <p>The reality is that an OKR platform and an issue tracker disagree about almost everything they model — hierarchy, progress, ownership, and who's actually in charge. The integration is where those disagreements get resolved into a single number a director looks at in a quarterly review.</p>
     <pre class="mermaid">
     flowchart LR
         subgraph JIRA["Jira Cloud"]
-            J1["Project → Epic → Task → Subtask&lt;br/&gt;(3 levels below project)"]
+            J1["Project → Epic → Task →&lt;br/&gt;Subtask (3 levels below project)"]
             J2["Arbitrary workflow statuses&lt;br/&gt;'In Review', 'QA', 'Blocked'…"]
             J3["Lead, Administrator, Member,&lt;br/&gt;Viewer, Assignee, Reporter, Watcher"]
             J4["Jira is the source of truth&lt;br/&gt;…or is it?"]
@@ -55,134 +54,8 @@
         J4 -.->|"authority&lt;br/&gt;boundary"| H4
     </pre>
 
-    <h2>The architecture</h2>
-    <p>Our tech lead built the transport in 2022 — the Atlassian Connect handshake, JWT auth, webhook registration, the REST client. From there, I owned everything above it: the layer that decides what a Jira project means inside an OKR platform.</p>
-    <pre class="mermaid">
-    flowchart TB
-        subgraph ATL["Atlassian Cloud"]
-            JC["Jira Cloud site"]
-            WH["9 registered Connect webhooks&lt;br/&gt;project updated / deleted / archived&lt;br/&gt;issue updated / deleted&lt;br/&gt;comment created / updated / deleted"]
-            API["REST API v3&lt;br/&gt;/project /search /user&lt;br/&gt;/role /watchers /attachment"]
-        end
-
-        subgraph TRANSPORT["Transport + trust (inherited)"]
-            DESC["Descriptor + lifecycle&lt;br/&gt;scopes: read"]
-            AUTH["JWT verification"]
-            CLIENT["JiraClient&lt;br/&gt;JQL builder · pagination · backoff"]
-            WHC["Webhook controllers"]
-        end
-
-        subgraph IDENTITY["Identity"]
-            INT["Integration (per tenant)"]
-            ITEM["Integration::Item&lt;br/&gt;polymorphic join&lt;br/&gt;key = Jira id&lt;br/&gt;object = Objective | User&lt;br/&gt;config = per-link policy"]
-        end
-
-        subgraph DOMAIN["Domain sync engine ★ mine"]
-            MAP["Jira::ObjectiveService&lt;br/&gt;pure mapping functions"]
-            ROLES["Involvement precedence chain"]
-            POLICY["Per-tenant mapping policy"]
-            IMPORT["Recursive hierarchy import"]
-        end
-
-        subgraph PROGRESS["Progress ★ mine"]
-            RU["RollUp::AverageByJiraPhase&lt;br/&gt;statusCategory → 0 / 50 / 100"]
-        end
-
-        subgraph ASYNC["Async pipeline ★ mine"]
-            JOB["SyncIntegrationJob (Sidekiq)"]
-            CABLE["ActionCable broadcast"]
-        end
-
-        JC --> WH --> WHC
-        API &lt;--&gt; CLIENT
-        DESC &amp; AUTH --- WHC
-        WHC --> MAP
-        CLIENT --> MAP
-        ITEM --- INT
-        MAP --- ITEM
-        MAP --> ROLES
-        MAP --> POLICY
-        MAP --> IMPORT
-        MAP -->|after_commit| RU
-        RU --> CLIENT
-        JOB --> MAP
-        JOB --> CABLE
-
-        style DOMAIN fill:#1f6feb22,stroke:#1f6feb
-        style PROGRESS fill:#1f6feb22,stroke:#1f6feb
-        style ASYNC fill:#1f6feb22,stroke:#1f6feb
-    </pre>
-    <p>Four pieces do the real work: a mapping engine that translates Jira's shape into ours, a role-precedence chain, a per-tenant policy layer, and an async pipeline that keeps all of it off the request path. Each of those is a takeaway in its own right — and each one generalises past Jira.</p>
-
-    <h2>Takeaway: model external state as a pluggable strategy, not a branch</h2>
-    <p>The platform already had a family of roll-up strategies, each answering "what's this goal's progress?" from child records in our own database. A Jira-linked goal has no children in our database — its progress lives in someone else's API, across issues that will never be our records.</p>
-    <p>My first pass threaded Jira context through the shared <code>Progress</code> class. It worked, and it was wrong: that class is also called from rendering and from an unrelated workflow, so a version that only behaves correctly when Jira arguments are present breaks silently everywhere else. The fix was a strategy class of its own, writing its answer into the objective's ordinary fields — everything downstream stays ignorant that Jira exists.</p>
-    <p>The part I'm proudest of: every Jira project invents its own workflow names, but every status belongs to exactly one of three universal categories. Keying on the category instead of the name means zero configuration, and it works on any customer's Jira from day one.</p>
-    <pre class="mermaid">
-    flowchart LR
-        A["'To Do'&lt;br/&gt;'Backlog'&lt;br/&gt;'Icebox'"] --> N["statusCategory: new"] --> Z["0%"]
-        B["'In Progress'&lt;br/&gt;'In Review'&lt;br/&gt;'QA'&lt;br/&gt;'Blocked'"] --> I["statusCategory: indeterminate"] --> F["50%"]
-        C["'Done'&lt;br/&gt;'Shipped'&lt;br/&gt;'Closed'"] --> D["statusCategory: done"] --> H["100%"]
-        Z &amp; F &amp; H --> AVG["average across the project's issues&lt;br/&gt;= the goal's progress"]
-    </pre>
-    <p><strong>Applies beyond Jira:</strong> when a foreign system's state doesn't map cleanly onto yours, don't bend your core abstraction to fit it. Isolate the translation in one place, and lean on whatever universal invariant the foreign system actually guarantees, instead of its ever-changing surface details.</p>
-
-    <h2>Takeaway: map a foreign system's concepts through an explicit precedence chain</h2>
-    <p>Our objectives don't have "an assignee" — they carry a role graph (leader, reviewer, PMO, stakeholder) that drives approval and review. Jira has a completely different vocabulary: project roles, issue assignees, reporters, watchers.</p>
-    <pre class="mermaid">
-    flowchart LR
-        subgraph SRC["Jira"]
-            L["project lead"]
-            ADM["role: Administrator(s)"]
-            MEM["role: Member"]
-            ASG["issue assignees"]
-            REP["reporters + creators"]
-            VIEW["role: Viewer"]
-            WAT["issue watchers"]
-        end
-        subgraph DST["Happy5 objective"]
-            LEAD["leader (single)"]
-            REV["reviewer (single)"]
-            PMO["PMO (many)"]
-            OWN["assignee (many)"]
-            STK["stakeholder (many)"]
-        end
-        ORG["Happy5 org chart:&lt;br/&gt;leader's direct manager"]
-
-        L --> LEAD
-        LEAD -.->|derived, not read from Jira| ORG --> REV
-        ADM --> PMO
-        MEM &amp; ASG &amp; REP --> OWN
-        VIEW &amp; WAT --> STK
-
-        style ORG fill:#f0ad4e22,stroke:#f0ad4e
-    </pre>
-    <p>Each tier resolves in order, filtered against everyone a higher tier already claimed — so a lead who also watches every issue stays the lead. The interesting case is the reviewer: Jira has no concept of "who signs this off," so it's synthesised by walking our own org chart from the mapped leader to their manager.</p>
-    <p><strong>Applies beyond Jira:</strong> mapping two systems' identity models is rarely a lookup table. Write the precedence explicitly, in order, and be honest about which fields you're deriving rather than reading.</p>
-
-    <h2>Takeaway: when customers disagree, make it configuration — not forks</h2>
-    <p>The mapping above is opinionated, and enterprise customers didn't share the opinion. One wanted Jira to never overwrite their reviewer; another wanted owners added, not replaced; a third had a security position on attachments.</p>
-    <p>Three separate customer asks are the same question about different fields: when both sides have a value, who wins? So the fix was one policy vocabulary — three verbs, uniform everywhere:</p>
-    <table>
-      <thead><tr><th>Value</th><th>Meaning</th></tr></thead>
-      <tbody>
-        <tr><td><code>replace</code></td><td>Drop what we have, install what Jira says</td></tr>
-        <tr><td><code>add_new</code></td><td>Keep what we have, add what Jira says</td></tr>
-        <tr><td><code>no</code></td><td>Keep what we have, ignore Jira</td></tr>
-      </tbody>
-    </table>
-    <p>Review improved it before it shipped: use strings, not booleans, so the vocabulary can grow later without a schema migration. That single note is why it survived three years of new requests, applied at three deliberately different scopes:</p>
-    <pre class="mermaid">
-    flowchart TB
-        ORG["Per organisation&lt;br/&gt;&lt;b&gt;who wins on each field&lt;/b&gt;&lt;br/&gt;jira_project_mapping&lt;br/&gt;jira_issue_mapping"]
-        LINK["Per link&lt;br/&gt;&lt;b&gt;how much to sync&lt;/b&gt;&lt;br/&gt;sync_option: all | measurement_only&lt;br/&gt;import_child_issues: bool"]
-        ROLE["Per role group&lt;br/&gt;&lt;b&gt;who can see it at all&lt;/b&gt;&lt;br/&gt;permission: jira.component.see"]
-        ORG --> LINK --> ROLE
-    </pre>
-    <p><strong>Applies beyond Jira:</strong> the instinct to special-case a demanding customer is almost always wrong. If you can name the axis of disagreement, it's a configuration primitive, not a branch — and the axis is usually the same one three other customers will ask about later.</p>
-
-    <h2>Takeaway: async buys you latency, not correctness</h2>
-    <p>Linking a real project meant fetching the project, every role, every issue, every issue's watchers, then writing N objectives — fine in a demo, a two-minute timeout against a 10,000-ticket tenant. So linking moved off the request path: <code>202 Accepted</code>, a background job, a broadcast when it's done.</p>
+    <h2>How it's built</h2>
+    <p>The integration is a Rails service sitting between the two systems. Jira Cloud pushes updates through webhooks and exposes a REST API for pulling project and issue data. A background layer built on Sidekiq does the actual translation — mapping Jira's projects, issues and workflow states into Happy5's goals, tasks and ownership — so a sync never blocks a web request the user is waiting on. Once a sync finishes, ActionCable pushes the result to the browser live, and everything lands in PostgreSQL alongside the rest of the platform's data.</p>
     <pre class="mermaid">
     sequenceDiagram
         participant U as User
@@ -191,46 +64,33 @@
         participant J as Jira REST
         participant WS as ActionCable
 
-        U->>API: POST /objectives/:id/integrations
-        API->>API: validate, persist link, record activity
+        U->>API: Link a Jira project
+        API->>API: validate &amp; persist the link
         API-->>U: 202 Accepted
         Note over U,API: request ends here
 
-        API->>Q: enqueue SyncIntegrationJob
-        Q->>J: fetch project / issue
+        API->>Q: enqueue sync job
+        Q->>J: fetch project / issue data
         J-->>Q: payload
-        Q->>Q: map to objective params
-        Q->>Q: apply tenant policy + sync_option
-        Q->>Q: persist inside transaction
-        Q->>Q: after_commit → enqueue RollUpJob
-        Q->>Q: import child issues (if requested)
-        Q->>Q: enforce alignment (if requested)
+        Q->>Q: map Jira data into OKR goals
+        Q->>Q: apply tenant configuration
+        Q->>Q: persist changes
+        Q->>Q: enqueue roll-up (progress) job
+        Q->>Q: import sub-items (if requested)
         Q->>WS: broadcast result
         WS-->>U: UI updates live
     </pre>
-    <p><strong>And then I broke it.</strong> Making it async meant child import and alignment enforcement fired <em>alongside</em> the sync instead of after it — child issues could be created before the parent had finished syncing. Production threw. The fix ran the three phases sequentially inside one unit of work instead of three independent ones.</p>
-    <p><strong>Applies beyond Jira:</strong> "make it async" gets sold as a free performance win. It isn't — it's latency traded for an ordering guarantee you now have to design and enforce yourself, and you usually find that out the hard way, the first time two jobs race.</p>
-
-    <h2>What it cost</h2>
-    <ul>
-      <li>The largest PR ran to 100 commits over five weeks in review — mostly arguing about where logic belonged, and most of those arguments improved the result.</li>
-      <li>One requirements misread cost two round trips, and the fix was a net deletion, not another conditional. Removing a guard is sometimes the correct fix.</li>
-      <li>Five rounds trying to make an ORM produce a correct join across a schema-per-tenant Postgres layout, before writing the SQL by hand. Trying the idiomatic path first was right; repeating it after it had visibly failed wasn't.</li>
-    </ul>
-
-    <h2>What actually lasted</h2>
-    <p>In 2026, three years after I handed this off, a PR landed to make the roll-up tolerate a deleted issue instead of aborting the whole batch. It modifies the same constant, the same three values, the same dispatch I wrote in October 2022.</p>
-    <p>In between, the integration absorbed a full user-flow revamp, an AI feature built on its data, and a service split — none of it touching the strategy class, the policy layer, or the async pipeline. That's the only design review that counts: not whether it was elegant on the day, but whether four years of requirements could land without tearing it out.</p>
+    <p>Linking a real project used to run synchronously — fetch the project, its roles, every issue, every issue's watchers, then write it all back. Fine in a demo, far too slow against a large tenant. Moving it off the request path bought speed, but it also meant a lesson worth keeping: async buys you latency, not correctness. The steps above have to run in a strict order, or a child item can get created before its parent has finished syncing. Making something async is a design decision with its own failure modes, not a free performance win.</p>
 
     <h2>Key takeaways</h2>
     <ul>
-      <li>Isolate a foreign system's logic in one pluggable place — don't let it leak into shared abstractions your whole platform depends on.</li>
-      <li>When mapping identity or ownership across systems, write the precedence chain explicitly rather than guessing at a lookup table.</li>
-      <li>Encode customer disagreement as configuration the moment you can name the axis it disagrees on — and version that configuration from day one, so a tenant upgrading mid-cycle doesn't silently inherit new defaults.</li>
-      <li>Async is a latency trade, not a correctness upgrade. Design the ordering guarantee before you ship it, not after production finds the race.</li>
+      <li>Translate a foreign system's state into your own domain in one isolated layer — don't let a partner's concepts leak into abstractions the rest of your platform depends on.</li>
+      <li>When two systems model identity or ownership differently, define an explicit precedence order rather than a simple lookup table.</li>
+      <li>Let customers configure where they disagree with your defaults, instead of forking behavior per client.</li>
+      <li>Async trades latency for an ordering guarantee you now have to design and enforce yourself.</li>
     </ul>
 
-    <p><em>Backend engineer on Happy5 Performance, 2021 to present. This project ran September 2022 to May 2023.</em></p>
+    <p><em>Backend engineer on Happy5 Performance, 2021 to present.</em></p>
 
 - title: "H5 – Goal Custom Order"
   slug: "h5-goal-custom-order"
