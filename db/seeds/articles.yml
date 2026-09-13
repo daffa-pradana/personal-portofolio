@@ -1,7 +1,7 @@
 - title: "Architecting a Jira Sync Engine for an Enterprise OKR Platform"
   slug: "h5-jira-project-integration"
   subtitle: >
-    Designed and owned the domain layer of Happy5 Performance's Jira integration —
+    Designed and owned the domain layer of Happy5 Performance's Jira integration,
     the sync engine that turns Jira projects, issues and workflow states into
     enterprise OKR goals, tasks, ownership and live progress. Still the production
     code path four years later.
@@ -33,7 +33,7 @@
 
     <h2>The problem</h2>
     <p>"Integrate with Jira" sounds like an afternoon of REST calls. The demo is easy: pick a project, pick a goal, draw a line between them.</p>
-    <p>The reality is that an OKR platform and an issue tracker disagree about almost everything they model — hierarchy, progress, ownership, and who's actually in charge. The integration is where those disagreements get resolved into a single number a director looks at in a quarterly review.</p>
+    <p>The reality is that an OKR platform and an issue tracker disagree about almost everything they model: hierarchy, progress, ownership, and who's actually in charge. The integration is where those disagreements get resolved into a single number a director looks at in a quarterly review.</p>
     <pre class="mermaid">
     flowchart LR
         subgraph JIRA["Jira Cloud"]
@@ -55,7 +55,7 @@
     </pre>
 
     <h2>How it's built</h2>
-    <p>The integration is a Rails service sitting between the two systems. Jira Cloud pushes updates through webhooks and exposes a REST API for pulling project and issue data. A background layer built on Sidekiq does the actual translation — mapping Jira's projects, issues and workflow states into Happy5's goals, tasks and ownership — so a sync never blocks a web request the user is waiting on. Once a sync finishes, ActionCable pushes the result to the browser live, and everything lands in PostgreSQL alongside the rest of the platform's data.</p>
+    <p>The integration is a Rails service sitting between the two systems. Jira Cloud pushes updates through webhooks and exposes a REST API for pulling project and issue data. A background layer built on Sidekiq does the actual translation, mapping Jira's projects, issues and workflow states into Happy5's goals, tasks and ownership, so a sync never blocks a web request the user is waiting on. Once a sync finishes, ActionCable pushes the result to the browser live, and everything lands in PostgreSQL alongside the rest of the platform's data.</p>
     <pre class="mermaid">
     sequenceDiagram
         participant U as User
@@ -80,11 +80,11 @@
         Q->>WS: broadcast result
         WS-->>U: UI updates live
     </pre>
-    <p>Linking a real project used to run synchronously — fetch the project, its roles, every issue, every issue's watchers, then write it all back. Fine in a demo, far too slow against a large tenant. Moving it off the request path bought speed, but it also meant a lesson worth keeping: async buys you latency, not correctness. The steps above have to run in a strict order, or a child item can get created before its parent has finished syncing. Making something async is a design decision with its own failure modes, not a free performance win.</p>
+    <p>Linking a real project used to run synchronously: fetch the project, its roles, every issue, every issue's watchers, then write it all back. Fine in a demo, far too slow against a large tenant. Moving it off the request path bought speed, but it also meant a lesson worth keeping: async buys you latency, not correctness. The steps above have to run in a strict order, or a child item can get created before its parent has finished syncing. Making something async is a design decision with its own failure modes, not a free performance win.</p>
 
     <h2>Key takeaways</h2>
     <ul>
-      <li>Translate a foreign system's state into your own domain in one isolated layer — don't let a partner's concepts leak into abstractions the rest of your platform depends on.</li>
+      <li>Translate a foreign system's state into your own domain in one isolated layer. Don't let a partner's concepts leak into abstractions the rest of your platform depends on.</li>
       <li>When two systems model identity or ownership differently, define an explicit precedence order rather than a simple lookup table.</li>
       <li>Let customers configure where they disagree with your defaults, instead of forking behavior per client.</li>
       <li>Async trades latency for an ordering guarantee you now have to design and enforce yourself.</li>

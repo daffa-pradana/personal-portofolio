@@ -39,7 +39,8 @@
 .article-body .trix-content ul,
 .article-body .trix-content ol,
 .article-body .trix-content blockquote,
-.article-body .trix-content pre {
+.article-body .trix-content pre,
+.article-body .trix-content table {
   margin-top: 1.3em;
 }
 
