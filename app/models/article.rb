@@ -29,6 +29,16 @@ class Article < ApplicationRecord
     slug
   end
 
+  # SVG covers can't be run through Active Storage's variant pipeline —
+  # ActiveStorage::InvariableError, since image/svg+xml isn't in
+  # ActiveStorage.variable_content_types (raster-only, since SVGs are
+  # arbitrary-code-risk to transform and don't need it: they're already
+  # resolution-independent). Serve the original blob for those instead of
+  # raising; every raster upload still gets its named variant.
+  def cover_image_variant(name)
+    cover_image.variable? ? cover_image.variant(name) : cover_image
+  end
+
   private
     def generate_slug
       return if slug.present? || title.blank?

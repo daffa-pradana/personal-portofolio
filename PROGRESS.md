@@ -383,12 +383,21 @@ until he's done his own research. Audited 2026-09-12:
 
 | Slot | Cover image | Body |
 |---|---|---|
-| Project/Case Study 1 | attached | placeholder (41 chars) |
+| Project/Case Study 1 (`h5-jira-project-integration`) | ✅ real (`h5-jira-cover.svg`) | ✅ full write-up, 2026-09-13 |
 | Project/Case Study 2 | missing | empty |
 | Project/Case Study 3 | missing | empty |
 
+- [x] ~~Research + write-up for the Jira integration case study~~ — done
+      2026-09-13, from Daffa's own research pack at
+      `tmp/jira-integration-case-study/` (git-ignored, his input, not
+      committed). Title/subtitle rewritten from the research's suggested
+      framing (old copy was generic marketing filler); client names kept
+      anonymised per Daffa's call, matching the source article's own
+      convention. See "Jira case study: content + Mermaid diagram support"
+      in the session log below — this pulled in real infrastructure changes
+      (Mermaid.js, a sanitizer fix, an SVG-variant fix), not just content.
 - [ ] Daffa to finish researching which projects to feature and gather real
-      cover images + full write-ups
+      cover images + full write-ups for the remaining two slots
 - [ ] Cover image for every published case study
 - [ ] Full body content for every published case study (currently only
       stubs/placeholders)
@@ -465,6 +474,89 @@ merely likely.
 ## Session Log
 
 Brief notes per work session — what got done, what decisions were made, what's blocked.
+
+### 2026-09-13 — Jira case study: content + Mermaid diagram support
+
+Completed the first Batch 5 slot: the `h5-jira-project-integration` article
+now has its real body and cover image, sourced from Daffa's own research pack
+at `tmp/jira-integration-case-study/` (git-ignored — his input, not repo
+content). Three decisions were his call, asked up front: keep client names
+anonymised (the source article already did — Telkom/MiFX/Sirclo never
+actually appear in `07-CASE-STUDY-ARTICLE.md`, only in the supporting
+research files), render the draft's 9 Mermaid diagrams as real diagrams
+rather than dropping them, and update the title/subtitle to the research's
+stronger framing (old copy was generic marketing filler inconsistent with
+the rest of the piece).
+
+That diagram choice pulled in more than content:
+
+- **Mermaid via importmap, pinned to jsdelivr directly.** `bin/importmap pin
+  mermaid` fails — jspm.io's `generate` API can't resolve mermaid's own
+  dependency tree (confirmed directly against `api.jspm.io/generate`, not
+  just inferred from the CLI failure). Worked around by pinning mermaid's
+  self-contained ESM bundle straight from jsdelivr
+  (`mermaid@11.17.2/dist/mermaid.esm.min.mjs`); its only imports are relative
+  `./chunks/...` paths the browser resolves against that same URL, so
+  nothing else needed pinning. New `mermaid_controller.js` (Stimulus) calls
+  `mermaid.run()` on any `pre.mermaid` inside the element it's attached to;
+  wired onto `.article-body` in the show page. `securityLevel: "loose"` is
+  deliberate — the diagrams use `<br/>` inside node labels for line breaks,
+  which the "strict" default escapes into literal text instead of rendering.
+  Safe here since article bodies are admin-authored, never visitor input.
+- **Action Text silently drops `<table>`.** Discovered by curling the
+  rendered page: two tables in the draft (an "at a glance" summary, a
+  config-value reference) came out as run-on text with no cells, no error.
+  Root cause: Rails' safe-list sanitizer's default allowlist has no
+  table/tr/th/td (confirmed by checking `ActionText::ContentHelper
+  .sanitizer.class` directly — it resolves to `Rails::HTML4::SafeListSanitizer`
+  even though `config.action_text.sanitizer_vendor` says HTML5, apparently a
+  fallback). Fixed in `config/initializers/rich_text_sanitizer.rb`, widening
+  the allowlist on both HTML4 and HTML5 safe-list sanitizer classes since
+  either could be the one actually resolved. Table tags were present in the
+  raw DB column the whole time — the strip happens at render, not at save,
+  which is why this wasn't visible from the console alone.
+- **SVG covers can't get Active Storage variants.** `article.cover_image
+  .variant(:hero)` on the new SVG raised `ActiveStorage::InvariableError`
+  immediately (not lazily on first process) — `image/svg+xml` isn't in
+  `ActiveStorage.variable_content_types`. Rather than rasterize the SVG (no
+  libvips/rsvg-convert/imagemagick available locally to do that, and no sudo
+  to install one), added `Article#cover_image_variant(name)`: returns the
+  named variant for anything Active Storage can transform, the original blob
+  otherwise. SVGs don't need a resized derivative anyway — they're already
+  resolution-independent. All three render sites (card partial, admin form
+  preview, show page) now call this instead of `.variant` directly.
+- **Cover images now seed by convention, not by a YAML field.** Action Text
+  and Active Storage attachments can't be expressed as YAML values, so
+  `db/seeds/images/<slug>.<ext>` auto-attaches to the matching `Article` —
+  added to `seeds.rb`, only when nothing is attached yet (same
+  don't-clobber-a-CMS-upload reasoning as `SiteSetting`'s
+  `update_existing: false`). The dev DB already had a generic placeholder
+  cover attached to this article from earlier scaffolding, which is exactly
+  the case that guard is for — the real cover was attached with a one-off
+  `rails runner` command instead, deliberately not by changing the seed
+  logic to force-overwrite.
+- **Verified beyond the test suite**, since none of this is exercised by
+  existing tests: booted the dev server, curled the real rendered page (not
+  just the DB row) after each fix to confirm tables/mermaid-blocks/cover-image
+  actually reached the HTML, and confirmed the generated importmap script
+  really contains the `mermaid` and `controllers/mermaid_controller` entries
+  a browser would load. Couldn't get an actual browser screenshot — no
+  chromium-cli, no system Chromium, and `npx playwright` fails (its browser
+  download step hits a blocked network path; `playwright-core` alone
+  installs fine). Closest available substitute: extracted all 9 diagrams
+  from the seeded YAML, round-tripped the HTML-entity escaping back to raw
+  Mermaid source, and ran them through mermaid's own `parse()` in a headless
+  jsdom environment (`npm i mermaid jsdom` in a scratch dir) — all 9 parse
+  cleanly. Full `render()` failed there on `CSSStyleSheet is not defined`,
+  which is a jsdom gap (constructable stylesheets), not a diagram problem —
+  identical failure on all 9 including the trivial ones, and a real browser
+  has that API natively.
+- Added regression tests: `cover_image_variant` for both the raster and SVG
+  branches, table markup surviving Action Text rendering, and an SVG cover
+  rendering directly on the show page. 149 -> 153 tests (4 new), all green.
+  0 rubocop offenses, 0 brakeman warnings.
+- **Still open:** the other two case-study slots (empty body, no cover) —
+  waiting on Daffa's own research, same as before.
 
 ### 2026-08-23 (later — knowledge base rewrite, and three retrieval bugs it exposed)
 

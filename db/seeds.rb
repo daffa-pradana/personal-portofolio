@@ -42,6 +42,21 @@ end
 
 seed_from_yaml(Article, "articles.yml", find_by: :slug)
 
+# Cover images can't be expressed in YAML, so they're matched by convention
+# instead: db/seeds/images/<slug>.<ext> attaches to the Article with that
+# slug. Only when nothing is attached yet — cover images are also editable
+# through the admin CMS, and re-seeding must not clobber an upload made
+# there, same reasoning as `update_existing: false` for SiteSetting above.
+Dir.glob(Rails.root.join("db/seeds/images/*")).each do |path|
+  slug = File.basename(path, ".*")
+  article = Article.find_by(slug: slug)
+  next unless article
+  next if article.cover_image.attached?
+
+  article.cover_image.attach(io: File.open(path), filename: File.basename(path))
+  puts "Attached cover image to article: #{slug}"
+end
+
 # The knowledge base is what the AI chat recites to visitors, so the YAML is
 # the single source of truth and seeding prunes anything not in it. Without
 # that, rewording an entry's title orphans the old row instead of updating it,

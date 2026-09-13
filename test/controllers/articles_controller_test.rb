@@ -90,6 +90,32 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
     assert_select "img[src*='cover.png']"
   end
 
+  test "show renders an SVG cover image directly, since it can't have a processed variant" do
+    article = articles(:jira_integration)
+    article.cover_image.attach(io: file_fixture("cover_image.svg").open, filename: "cover.svg", content_type: "image/svg+xml")
+
+    get article_path(article)
+
+    assert_response :success
+    assert_select "img[src*='cover.svg']"
+  end
+
+  # Action Text's default safe-list sanitizer strips <table>/<tr>/<th>/<td> —
+  # config/initializers/rich_text_sanitizer.rb widens it. Without this test a
+  # regression there (a gem upgrade resetting the allowlist, or the
+  # initializer being deleted) would only show up as a case-study article's
+  # tables silently collapsing into run-on text.
+  test "show renders table markup in the body, which Action Text does not allow by default" do
+    article = articles(:jira_integration)
+    article.update!(body: "<table><tbody><tr><th>Role</th><td>Backend</td></tr></tbody></table>")
+
+    get article_path(article)
+
+    assert_response :success
+    assert_select ".article-body table tr th", text: "Role"
+    assert_select ".article-body table tr td", text: "Backend"
+  end
+
   test "show 404s for a draft" do
     get article_path(articles(:unpublished_case_study))
 
