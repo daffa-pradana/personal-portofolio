@@ -62,8 +62,15 @@ class Article < ApplicationRecord
     # Stored rather than computed on read so the articles index can show it
     # without loading every body. Recalculated on every save, since that is the
     # only moment the body can have changed.
+    #
+    # Mermaid diagram source (<pre class="mermaid">) is excluded: a reader
+    # sees a rendered diagram there, not the syntax that produced it, so
+    # counting it as prose overstates reading time — a diagram-heavy article
+    # was measuring "14 min read" when a quarter of that word count was
+    # flowchart syntax nobody actually reads.
     def calculate_reading_time
-      word_count = body.to_plain_text.split.size
+      body_without_diagrams = body.to_s.gsub(%r{<pre class="mermaid">.*?</pre>}m, "")
+      word_count = ActionText::Content.new(body_without_diagrams).to_plain_text.split.size
 
       self.reading_time = word_count.zero? ? nil : (word_count / WORDS_PER_MINUTE.to_f).ceil
     end

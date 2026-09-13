@@ -109,6 +109,13 @@ class ArticleTest < ActiveSupport::TestCase
     assert_equal 5, article.reading_time
   end
 
+  test "excludes mermaid diagram source from the reading time word count" do
+    diagram = "flowchart LR\n#{words(400)}"
+    article = Article.create!(title: "Diagram Post", body: "<p>#{words(200)}</p><pre class=\"mermaid\">#{diagram}</pre>")
+
+    assert_equal 1, article.reading_time
+  end
+
   test "clears reading time when the body is emptied" do
     article = Article.create!(title: "Emptied Post", body: "<p>#{words(400)}</p>")
     assert_equal 2, article.reading_time

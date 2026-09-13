@@ -604,6 +604,45 @@ and point `LD_LIBRARY_PATH` at it per-invocation, or accept the existing
 "only production really processes images" split and rely on Railway for
 final visual confirmation.
 
+### 2026-09-13 (later still — content pass: 14 min → 7 min, timeline cut, takeaway-driven)
+
+Daffa's read of the published draft: too long for the genre (14 min vs. an
+ideal 7-8 for an in-depth technical case study), too much prose narrating
+*what the code did*, and no timeline section — readers want the fruit
+(applicable takeaways) connected to the architecture story, not a rewind of
+when each piece landed.
+
+- **Cut the whole "where I came in" section**, gantt chart included — a
+  professional history timeline, not something a reader can use.
+- **Cut the `RollUp` class diagram and the before/after hierarchy diagram**
+  — both were closer to describing code structure (class names, method
+  signatures) than visualizing the actual architecture decision. Kept the
+  `statusCategory` mapping diagram from the same section instead: it shows
+  the *concept* (three universal categories), not the implementation.
+  9 diagrams → 6, all now genuinely architecture, not code.
+- **Restructured around four explicit "Takeaway:" sections** (pluggable
+  strategy over branching; explicit precedence chains for cross-system
+  identity; configuration over per-customer forks; async trades latency for
+  an ordering guarantee you must design yourself), each closing with an
+  "Applies beyond Jira:" line — the connective tissue Daffa asked for
+  between the specific story and a lesson a reader can actually take away.
+  Added a closing "Key takeaways" recap for skimmers.
+- **Trimmed "what it cost" from four bullets to three** and cut the
+  paragraph-length narration in each decision down to what's needed to
+  understand the diagram next to it, rather than re-explaining it in prose.
+- **Found and fixed a real measurement bug while checking the result:**
+  `reading_time` counted Mermaid diagram *source text* as prose — a reader
+  sees a rendered diagram there, never that syntax, so a diagram-heavy
+  article was overcounting. On the *previous* 9-diagram draft this alone was
+  652 of 2,643 words (~25%) that nobody actually reads. Fixed in
+  `Article#calculate_reading_time` by stripping `<pre class="mermaid">`
+  blocks before counting; added a regression test. Combined with the content
+  cut, the article now measures **7 min** (confirmed rendered on the live
+  page, not just computed).
+- 154 tests (+1: the reading-time fix), 0 rubocop offenses, 0 brakeman
+  warnings. All 6 diagrams re-verified through mermaid's `parse()` in the
+  same headless jsdom setup as before.
+
 ### 2026-08-23 (later — knowledge base rewrite, and three retrieval bugs it exposed)
 
 Daffa rewrote `db/seeds/knowledge_entries.yml` himself with current,
