@@ -558,6 +558,52 @@ That diagram choice pulled in more than content:
 - **Still open:** the other two case-study slots (empty body, no cover) —
   waiting on Daffa's own research, same as before.
 
+### 2026-09-13 (later — cover image was still broken in a real browser)
+
+Daffa's manual review (the thing the previous entry couldn't do) caught what
+curl-only verification missed: the SVG cover rendered as a broken image icon
+in Chrome, even after the `cover_image_variant` fallback above. Root cause
+was a second, unrelated issue — Rails serves any blob whose content type is
+in `ActiveStorage.content_types_to_serve_as_binary` (`image/svg+xml` is on
+that list by default) with a forced `Content-Type: application/octet-stream`
++ `Content-Disposition: attachment`, regardless of variant support. That's
+deliberate: an inline-rendered SVG can carry a `<script>` tag, so Rails
+won't serve one as a live image unless you opt in via
+`content_types_allowed_inline` — which would apply to every future
+admin-uploaded cover, not just this one, i.e. a real stored-XSS exposure for
+every site visitor if the admin account were ever compromised. Not worth
+loosening app-wide for one cover image.
+
+Fixed by rasterizing the cover to PNG instead (a scratch Node script,
+`sharp` — it bundles its own libvips, no system install needed) and
+re-attaching that. It now flows through the exact same path every other
+cover image already uses, no special-casing needed. Kept
+`Article#cover_image_variant`'s SVG-fallback branch and its test regardless
+— it's still correct, generically defensive behavior for any future
+non-variable attachment, just not exercised by this particular cover anymore.
+
+This also exposed that **local dev has never actually processed a real
+image variant in a browser** — no libvips installed at all, so
+`.variant(...).processed` had simply never been hit outside production.
+Installing Ubuntu jammy's `libvips42` (8.12.1) to fix that made things
+*worse*: Rails 8.1's Active Storage requires libvips 8.13+ (`Vips
+.block_untrusted`) and refuses to boot at all — not just skip variants —
+below that, so the app stopped starting entirely, for anything (console,
+tests, server). Removed it again to restore the documented working state
+(no libvips -> app boots fine, variants just aren't processed locally,
+exactly as before). Real end-to-end rendering was instead verified through
+an isolated libvips 8.18.6 via `micromamba`/conda-forge in `/tmp`, loaded
+only via `LD_LIBRARY_PATH` for that one server process — nothing installed
+on the machine, nothing committed. Both the card `:thumb` (800×500) and
+article `:hero` (1080×675) variants confirmed rendering as real PNGs.
+
+**If real local image-variant testing is wanted again later:** don't
+`apt install libvips42` on Ubuntu jammy — it's the wrong version. Either
+build/fetch libvips >= 8.13 (conda-forge's `libvips` package worked cleanly)
+and point `LD_LIBRARY_PATH` at it per-invocation, or accept the existing
+"only production really processes images" split and rely on Railway for
+final visual confirmation.
+
 ### 2026-08-23 (later — knowledge base rewrite, and three retrieval bugs it exposed)
 
 Daffa rewrote `db/seeds/knowledge_entries.yml` himself with current,
