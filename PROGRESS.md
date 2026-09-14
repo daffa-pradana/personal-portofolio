@@ -776,6 +776,38 @@ the rendered HTML on all three cards, and reasoned through the mechanics,
 which are standard, well-defined Flexbox behavior. 154 tests, 0 rubocop
 offenses.
 
+### 2026-09-14 (later still — a fourth article: personal blog post, not a case study)
+
+Different kind of request this time: not a project case study, but a
+first-person blog post about Daffa's own journey into RAG/LLM concepts,
+after attending a workshop ("Building RAG-Based AI Chatbot") organised by
+NeoTechPark. `article_type: blog`, not `case_study` — it doesn't appear in
+the landing page's "My Latest Projects" (that query filters to
+`case_study` only, unaffected), only on `/articles` and under its own
+"Blog" filter tab. Confirmed both directly against the running app.
+
+- Researched RAG/LLM fundamentals before writing (two web searches: the
+  retrieve/augment/generate framing, and keyword vs. embedding-based
+  retrieval) so the concept explanations in the post are accurate, not just
+  plausible-sounding.
+- Grounded the whole piece in what's actually implemented in this repo
+  (read `ChatService`, `KnowledgeRetriever`, `ChatsController` first) rather
+  than describing a generic/idealised RAG pipeline: the real system uses
+  keyword scoring, not embeddings (`KnowledgeRetriever`'s own comment says
+  why), a system-prompt-based guardrail, and session+IP rate limiting. The
+  post narrates arriving at each of those as answers to questions, which
+  matches how the codebase's own comments describe the reasoning.
+- No proprietary-detail concern here at all, unlike the two employer case
+  studies — this is Daffa's own public feature on his own site, so
+  describing exactly how it works is the entire point.
+- CTA button ("Try the AI Chat" → `#chat`) reuses the same anchor-resolution
+  pattern as the existing RAG case study's button, so it works identically
+  whether the reader is on `/articles/:slug` or the homepage.
+- Reading time: **6 min** — longer than the two case studies by design;
+  this is a reflective personal essay, not a trimmed technical writeup, and
+  wasn't put through the same length-cutting pass.
+- 154 tests still green (no new application code), 0 rubocop offenses.
+
 ### 2026-08-23 (later — knowledge base rewrite, and three retrieval bugs it exposed)
 
 Daffa rewrote `db/seeds/knowledge_entries.yml` himself with current,

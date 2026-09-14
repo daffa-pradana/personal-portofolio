@@ -182,3 +182,55 @@
   button_label: "Try Here!"
   button_url: "#chat"
   position: 3
+
+- title: "The Workshop That Reignited My Curiosity"
+  slug: "the-workshop-that-reignited-my-curiosity"
+  subtitle: >
+    Some notes on going from "what even is RAG" to shipping my first AI feature,
+    after a workshop reminded me why I got into this in the first place.
+  article_type: blog
+  status: published
+  tags:
+    - "RAG"
+    - "LLM"
+    - "AI Integration"
+    - "Learning"
+  button_label: "Try the AI Chat"
+  button_url: "#chat"
+  body: |
+    <h2>The fire that had gone quiet</h2>
+    <p>I've been a backend engineer for a while now, comfortable in the kind of remote job that pays well and asks little of you beyond doing what you already know how to do. Comfortable is a nice word for it. Looking back, I think what it actually did was let the part of me that used to stay up late chasing a new idea go quiet for a few years.</p>
+    <p>I didn't notice it was gone until something reminded me it used to be there.</p>
+
+    <h2>The workshop</h2>
+    <p>That something was a workshop organised by <a href="https://www.linkedin.com/company/neotechpark/" target="_blank" rel="noopener noreferrer">NeoTechPark</a> called "Building RAG-Based AI Chatbot." I went in expecting an afternoon of slides. I left with a question I couldn't stop turning over: could I actually build one of these myself, for something real, not a tutorial repo I'd abandon in a week?</p>
+    <p>That question is the reason this website has an AI chat feature at all, and the reason this article exists.</p>
+
+    <h2>Starting from "what even is RAG"</h2>
+    <p>RAG stands for Retrieval-Augmented Generation, and once I stopped being intimidated by the acronym it turned out to be a genuinely simple idea. A language model only knows what it was trained on, which for a general-purpose model is everything except the one thing I wanted it to talk about: me. So instead of trying to teach it about Daffa Pradana, I taught it to look things up.</p>
+    <p>Three steps happen every time a visitor asks this site's chat something:</p>
+    <ol>
+      <li><strong>Retrieve.</strong> Search a knowledge base of short facts about me and pull out the ones that look relevant to the question.</li>
+      <li><strong>Augment.</strong> Paste those facts into the prompt, right alongside the question, as context the model didn't have a moment ago.</li>
+      <li><strong>Generate.</strong> Let the model write the actual answer, grounded in what it was just handed instead of whatever it half remembers from training.</li>
+    </ol>
+    <p>That's genuinely the whole idea. Everything else I learned after the workshop was really just "how do you make each of those three steps not fall over in production."</p>
+
+    <h2>The question that took the longest to answer: how does it find the right facts?</h2>
+    <p>My first instinct, straight out of the workshop, was that "real" retrieval meant embeddings and a vector database: turn every fact into a list of numbers that captures its meaning, turn the question into the same kind of list, and find the facts whose numbers sit closest to the question's. That's what most RAG tutorials reach for first, and it's genuinely powerful. It's also a lot of new machinery to bring in before I'd proven to myself that I understood the idea underneath it.</p>
+    <p>So I built the boring version first: keyword matching. Strip the question down to its meaningful words, score each fact by how many of those words it contains, and hand the model the highest scoring handful. No embeddings, no vector column, nothing to deploy beyond the database I already had. It sounds too simple to work, and for a knowledge base of a few dozen facts about one person, it works fine.</p>
+    <p>Along the way I hit the failure mode that made me actually understand why embeddings exist. A strict keyword filter is unforgiving: ask "is he any good?" and there are no shared words with anything in the knowledge base at all, so a naive implementation returns nothing and the model has to guess. The fix was to stop filtering and start ranking instead, always handing over the best matches even when the match is weak, plus one fact I decided should always be reachable no matter the question: how to actually get in touch with me. Embeddings solve this same problem a different way, by understanding that "is he any good" is conceptually close to "his experience" even though the two share zero words. I understand that now because I had to solve a smaller version of the problem by hand first.</p>
+
+    <h2>The question I didn't expect: what stops it from making things up?</h2>
+    <p>Language models are confident by default, which is a polite way of saying they'll answer a question they don't have an answer to just as fluently as one they do. That part of building an AI product has nothing to do with retrieval and everything to do with instructions: a system prompt that explicitly tells the model what it's for, what to do when it doesn't know something, and what to refuse. Mine says, in plain words, that it exists only to answer questions about me, to say honestly when it doesn't know, and to never invent something that isn't in the facts it was handed.</p>
+    <p>The uncomfortable lesson was that writing the instruction is the easy part. Believing it'll be followed without checking is the mistake. I only trusted mine after asking it something unrelated on purpose and watching it decline, then asking it something it had no facts for and watching it admit that instead of guessing.</p>
+
+    <h2>The questions that had nothing to do with AI at all</h2>
+    <p>The parts I hadn't anticipated turned out to be the most familiar. An API call costs money and can be abused, so there's a rate limit, per visitor and per session, same as any endpoint I'd have protected before I'd ever heard of RAG. Providers retire model names without much warning, so the integration talks to the generic shape every OpenAI-compatible API shares rather than to one provider specifically, which means switching providers later is a configuration change, not a rewrite. None of that is exotic. It's the same engineering judgment I already had, pointed at a new kind of dependency.</p>
+    <p>That was the most reassuring thing I learned. The part that felt like magic from the outside was mostly retrieval and prompt design. The part that actually needed engineering experience was everything that has always needed engineering experience.</p>
+
+    <h2>Where I landed</h2>
+    <p>The chat widget on this site's homepage is the answer to the question the workshop left me with. It's small on purpose: a few dozen facts, keyword ranked, one provider, one system prompt. I'd rather ship the simple version I fully understand than the impressive sounding version I copied from a tutorial.</p>
+    <p>I don't think the point of any of this was really RAG. It was noticing that the part of me that wants to stay up late building something hadn't actually died. It was just waiting for a reason.</p>
+
+    <p><em>If you're curious what the result actually sounds like, it's on this page.</em></p>
