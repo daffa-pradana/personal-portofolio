@@ -104,8 +104,8 @@
     - "Ruby on Rails"
     - "PostgreSQL"
     - "Sidekiq"
-  button_label: ~
-  button_url: ~
+  button_label: "Product Page"
+  button_url: "https://www.happy5.co/product/goals-okr-tracking-software"
   position: 2
   body: |
     <h2>At a glance</h2>
