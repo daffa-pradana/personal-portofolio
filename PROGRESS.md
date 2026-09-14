@@ -384,8 +384,8 @@ until he's done his own research. Audited 2026-09-12:
 | Slot | Cover image | Body |
 |---|---|---|
 | Project/Case Study 1 (`h5-jira-project-integration`) | ✅ real (`h5-jira-project-integration.png`) | ✅ full write-up, merged |
-| Project/Case Study 2 (`h5-goal-custom-order`) | ⏳ Daffa generating one | ✅ full write-up, 2026-09-13 |
-| Project/Case Study 3 | missing | empty |
+| Project/Case Study 2 (`h5-goal-custom-order`) | ✅ real (`h5-goal-custom-order.png`), merged | ✅ full write-up, merged |
+| Project/Case Study 3 (`rag-ai-chatbot`) | ✅ real (`rag-ai-chatbot.webp`) | ✅ full write-up, 2026-09-14 |
 
 - [x] ~~Research + write-up for the Jira integration case study~~ — done
       2026-09-13, merged. From Daffa's own research pack at
@@ -407,11 +407,25 @@ until he's done his own research. Audited 2026-09-12:
       the source doc carried into the public page. Cover image not yet
       attached; Daffa is generating one himself, same convention as the
       Jira article (`db/seeds/images/h5-goal-custom-order.<ext>` auto-attaches
-      on next `db:seed` once it exists — see `seeds.rb`).
-- [ ] Daffa to finish researching which project goes in the third slot and
-      gather its cover image + write-up
-- [ ] Attach the custom-ordering cover once Daffa has generated it
-- [ ] Confirm final project list/order once content is ready
+      on next `db:seed` once it exists — see `seeds.rb`). Cover attached
+      2026-09-14 once he provided it — merged.
+- [x] ~~Third slot~~ — done 2026-09-14. Not a new project: repurposed the
+      site's own AI chat feature, which already had an empty `rag-ai-chatbot`
+      case-study placeholder reserved at `position: 3`. See the "system-focused
+      RAG case study" session log entry below for how this article came to be
+      (it started as a personal blog post, then got folded into this existing
+      slot instead of shipping as a fourth, separate article).
+- [x] ~~Cover image for `rag-ai-chatbot`~~ — done 2026-09-14. Provided as a
+      PNG; converted to WebP before attaching (94% smaller, same visual
+      quality) — see the "RAG cover attached, converted to WebP" session
+      log entry.
+- [x] ~~Confirm final project list/order once content is ready~~ — all three
+      landing-page slots now resolve to distinct, real projects with real
+      covers: Jira integration, custom ordering, RAG chatbot.
+
+**All three Batch 5 case-study slots are now filled with real covers and
+full write-ups.** What's left in this batch is Daffa's own review/merge of
+the open PRs, and the custom-domain/SSL step this batch was blocking.
 
 Custom domain + SSL (previous Batch 4 item) waits until this batch is done —
 no point pointing a real domain at placeholder content.
@@ -775,6 +789,154 @@ earlier in this file); verified instead that the compiled classes reached
 the rendered HTML on all three cards, and reasoned through the mechanics,
 which are standard, well-defined Flexbox behavior. 154 tests, 0 rubocop
 offenses.
+
+### 2026-09-14 (later still — a fourth article: personal blog post, not a case study)
+
+Different kind of request this time: not a project case study, but a
+first-person blog post about Daffa's own journey into RAG/LLM concepts,
+after attending a workshop ("Building RAG-Based AI Chatbot") organised by
+NeoTechPark. `article_type: blog`, not `case_study` — it doesn't appear in
+the landing page's "My Latest Projects" (that query filters to
+`case_study` only, unaffected), only on `/articles` and under its own
+"Blog" filter tab. Confirmed both directly against the running app.
+
+- Researched RAG/LLM fundamentals before writing (two web searches: the
+  retrieve/augment/generate framing, and keyword vs. embedding-based
+  retrieval) so the concept explanations in the post are accurate, not just
+  plausible-sounding.
+- Grounded the whole piece in what's actually implemented in this repo
+  (read `ChatService`, `KnowledgeRetriever`, `ChatsController` first) rather
+  than describing a generic/idealised RAG pipeline: the real system uses
+  keyword scoring, not embeddings (`KnowledgeRetriever`'s own comment says
+  why), a system-prompt-based guardrail, and session+IP rate limiting. The
+  post narrates arriving at each of those as answers to questions, which
+  matches how the codebase's own comments describe the reasoning.
+- No proprietary-detail concern here at all, unlike the two employer case
+  studies — this is Daffa's own public feature on his own site, so
+  describing exactly how it works is the entire point.
+- CTA button ("Try the AI Chat" → `#chat`) reuses the same anchor-resolution
+  pattern as the existing RAG case study's button, so it works identically
+  whether the reader is on `/articles/:slug` or the homepage.
+- Reading time: **6 min** — longer than the two case studies by design;
+  this is a reflective personal essay, not a trimmed technical writeup, and
+  wasn't put through the same length-cutting pass.
+- 154 tests still green (no new application code), 0 rubocop offenses.
+
+### 2026-09-14 (later still — the blog post became a system-focused case study instead)
+
+Daffa's next call, on reflection: he wants this on the landing page, which
+means `case_study`, not `blog` (the landing page's "My Latest Projects"
+query only ever includes `case_study`). He also asked for the personal POV
+to shrink to an opening, with the bulk of the article focused on "the
+system" — how the AI and knowledge base actually fit together as RAG.
+
+The important catch, caught before writing anything: this repo already had
+an empty `rag-ai-chatbot` case-study placeholder reserved at `position: 3`
+(visible in this file's own Batch 5 table, "Project/Case Study 3"), for
+this exact feature. Publishing the blog post as a *second*, separate
+`case_study` article about the same chatbot would have meant two case
+studies competing for the landing page's three slots, describing the same
+project. Consolidated instead: rewrote the existing `rag-ai-chatbot` entry
+in place (new title "Architecting a RAG Chatbot for My Own Portfolio", new
+body) and deleted the standalone blog article rather than keeping both.
+Slug, position and CTA (`#chat`) all carried over unchanged from the
+placeholder, so nothing about the reserved slot's identity changed, only
+its content.
+
+- Trimmed the personal narrative from six question-driven sections down to
+  one short "Where it started" paragraph — the workshop, the spark, one
+  line linking it to this feature. Everything else now leads with "The
+  system" and the three technical decisions (keyword retrieval over
+  embeddings, the system-prompt guardrail, rate limiting), matching the
+  structure the two employer case studies converged on.
+- Two new diagrams replacing the prose-heavy explanations: the overall
+  retrieve/augment/generate pipeline (with the rate-limit gate as a real,
+  included step, not glossed over) and the keyword-scoring-with-a-floor
+  mechanism from `KnowledgeRetriever`. Both re-verified through mermaid's
+  `parse()`, same as every other diagram in this file's case studies.
+- **A stale-data trap worth remembering**: `seed_from_yaml(Article, ...)`
+  deliberately does not prune (see `seeds.rb`'s own comment on why — admin
+  edits shouldn't vanish on reseed). Removing the blog article from the
+  YAML did not delete its row; the dev DB still had it until a manual
+  `Article.find_by(slug: ...).destroy!`. Anyone re-seeding from this file
+  after a similar edit needs to check for exactly this, since nothing warns
+  you.
+- Reading time: 6 min → **3 min**, now that it's the same length as the
+  other two converged case studies rather than an uncut personal essay.
+  Still no cover image for this slot — same auto-attach convention
+  (`db/seeds/images/rag-ai-chatbot.<ext>`) once one exists.
+- 154 tests, 0 rubocop offenses, 0 brakeman warnings. Confirmed live: the
+  old blog URL now 404s, the landing page's three project cards resolve to
+  three distinct titles, and both diagrams render.
+
+### 2026-09-14 (later still — RAG article expanded: no self-censorship needed here)
+
+Daffa's follow-up, after the 3-min trim above: this one's different from the
+two employer case studies. Every detail here is his own feature on his own
+site, so the "cut anything that reads like TMI" instinct from the Jira/
+custom-ordering articles doesn't apply — going longer and more detailed is
+fine. He asked for three specific additions: the *whole* system diagram (not
+the simplified 3-step version), a section on why Groq specifically, and a
+section on his own limitations and preferences, plus an explicit callout
+that per-visitor rate limiting solves both an abuse problem and a cost
+problem with one mechanism ("two birds, one stone", his framing).
+
+- **Replaced the simplified retrieve/augment/generate diagram with the full
+  pipeline**: four subgraphs (abuse/cost gate, retrieval, generation,
+  delivery), the per-IP and per-session limits as real branching nodes, and
+  all three response paths (success, provider rate-limited, provider
+  unavailable) shown explicitly rather than glossed over. This is the most
+  structurally complex diagram in any of the three case studies so far
+  (nested subgraphs + multiple conditional branches) — re-verified through
+  mermaid's `parse()` specifically because of that, not just as a formality.
+- **New "Why Groq" section**: free tier, fast inference, "enough for a
+  portfolio site, not a product with a growth target" — his own reasoning,
+  plus the technical fact that already existed in the code (OpenAI-
+  compatible contract, so switching providers is configuration, not a
+  rewrite) now given as the *reason* the cost decision was safe to make.
+- **New "Rate limiting: two birds, one stone" section**, replacing the old
+  one-paragraph "Keeping it safe to run": the per-IP/per-session limit
+  protects against abuse AND caps per-visitor cost with the same number,
+  checked in two places. Cited the real, already-measured figure from this
+  file's own 2026-09-11 entry (48% cut in average tokens/question from
+  capping retrieval) rather than a vague "saves tokens" — accurate, and
+  no reason to round it off now that exact numbers aren't a proprietary
+  concern.
+- **New "My limitations and preferences" section**: no cross-question
+  memory, no token streaming, a hand-curated knowledge base rather than a
+  document-ingestion pipeline, no automatic provider failover. All four are
+  real, verified against the code (`ChatService#request_body` only ever
+  sends one system + one user message, no history array) rather than
+  asserted from memory.
+- Reading time: 3 min → **7 min**. Confirmed live, along with both diagrams
+  rendering and the new sections present. 154 tests, 0 rubocop offenses,
+  0 brakeman warnings.
+
+### 2026-09-14 (later still — RAG cover attached, converted to WebP)
+
+Daffa provided `tmp/rag-chatbot-cover.png` (git-ignored, his input) — a
+photorealistic 3D render (knowledge base + question flowing into a "GROQ"
+cube, out to an answer), unlike the flat vector-style covers on the other
+two case studies. Already a real PNG at roughly the right aspect ratio, so
+none of the SVG-specific problems from the Jira cover applied here.
+
+What did apply: the source file was 1.5MB, and even Active Storage's
+`:hero` variant (resized to 1200×675, PNG saver quality 85) stayed at
+1.16MB, since PNG is lossless and this kind of glow/gradient-heavy render
+doesn't compress well losslessly — quite different from the two existing
+covers' flat colour blocks, which is why this problem never came up before.
+Converted to WebP before attaching (`sharp`, quality 85, same scratch-dir
+approach as every other image conversion this session): 1.5MB → 93KB
+source, and the served `:hero` variant landed at 58KB, visually
+indistinguishable at both full size and cropped thumb size. `image/webp` is
+already on `ActiveStorage.content_types_allowed_inline`, so this needed no
+code changes, unlike the SVG case.
+
+Attached via the same `db/seeds/images/<slug>.<ext>` convention as the
+other two covers (`rag-ai-chatbot.webp` this time). 154 tests, 0 rubocop
+offenses. Confirmed both `:thumb` and `:hero` variants render as real WebP
+images before calling it done — all three case-study slots now have real
+cover images.
 
 ### 2026-08-23 (later — knowledge base rewrite, and three retrieval bugs it exposed)
 

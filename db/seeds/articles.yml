@@ -166,19 +166,126 @@
 
     <p><em>Backend engineer on Happy5 Performance, 2021 to present.</em></p>
 
-- title: "RAG – AI Chatbot"
+- title: "Architecting a RAG Chatbot for My Own Portfolio"
   slug: "rag-ai-chatbot"
   subtitle: >
-    Built a Retrieval-Augmented Generation chatbot on top of a personal knowledge base
-    using the Groq API. Deployed as a portfolio feature with session-based
-    rate limiting and Turbo Streams.
+    What curiosity from a workshop turned into: a retrieval-augmented chatbot
+    built from scratch for this site, with its own retrieval, guardrails and
+    rate limits.
   article_type: case_study
   status: published
   tags:
     - "Ruby on Rails"
     - "Groq API"
     - "Hotwire"
+    - "RAG"
     - "LLM"
   button_label: "Try Here!"
   button_url: "#chat"
   position: 3
+  body: |
+    <h2>At a glance</h2>
+    <table>
+      <tbody>
+        <tr><th>Product</th><td>The AI chat feature on this portfolio site</td></tr>
+        <tr><th>My role</th><td>Designed and built it solo, end to end</td></tr>
+        <tr><th>Sparked by</th><td>A workshop on building RAG-based chatbots</td></tr>
+        <tr><th>Stack</th><td>Ruby on Rails, Groq API, Hotwire (Turbo Streams)</td></tr>
+        <tr><th>Still running</th><td>Yes, live on this site right now</td></tr>
+      </tbody>
+    </table>
+
+    <h2>The one-sentence version</h2>
+    <p>I built a retrieval-augmented chatbot that answers questions about me by grounding a language model in a small knowledge base, instead of trusting it to know anything on its own.</p>
+
+    <h2>Where it started</h2>
+    <p>I've been a backend engineer for a while, comfortable enough that the part of me that used to chase new ideas had gone quiet. A workshop on building RAG-based chatbots, organised by <a href="https://www.linkedin.com/company/neotechpark/" target="_blank" rel="noopener noreferrer">NeoTechPark</a>, brought it back. I left with one question: could I build a real one, not a tutorial project, for something that actually mattered to me? This chatbot, live on this site right now, is the answer.</p>
+
+    <h2>The system</h2>
+    <p>A language model only knows what it was trained on, and my portfolio isn't in there. So instead of trying to teach the model about me directly, the system looks things up first, then hands the model exactly what it needs to answer. Every question a visitor asks passes through four stages: a gate that decides whether to even bother calling an API, retrieval that decides what the model gets to know, generation where the model actually writes an answer, and delivery back to the browser. Here's the whole thing, gate to bubble.</p>
+    <pre class="mermaid">
+    flowchart TB
+        subgraph GATE["Abuse and cost gate"]
+            IP["Per-IP limit:&lt;br/&gt;20 questions / hour"]
+            SESSION["Per-session limit:&lt;br/&gt;10 questions / session"]
+        end
+
+        subgraph RETRIEVE["Retrieval"]
+            TERMS["Strip the question to&lt;br/&gt;meaningful keywords"]
+            SCORE["Score and rank every&lt;br/&gt;knowledge base entry"]
+            FLOOR["Guarantee one&lt;br/&gt;contact-info entry a seat"]
+        end
+
+        subgraph GENERATE["Generation"]
+            PROMPT["Build the system prompt:&lt;br/&gt;rules + retrieved facts"]
+            GROQ["Groq API&lt;br/&gt;(OpenAI-compatible)"]
+        end
+
+        subgraph DELIVER["Delivery"]
+            STREAM["Turbo Stream appends&lt;br/&gt;both bubbles live"]
+        end
+
+        Q["Visitor asks a question"] --> IP
+        IP -- over limit --> DENY["Polite decline,&lt;br/&gt;no API call made"]
+        IP -- ok --> SESSION
+        SESSION -- over limit --> DENY
+        SESSION -- ok --> TERMS --> SCORE --> FLOOR --> PROMPT --> GROQ
+        GROQ -- 200 --> STREAM
+        GROQ -- 429 --> LIMITMSG["Rate-limited message"]
+        GROQ -- error --> UNAVAIL["Temporarily unavailable message"]
+        DENY --> STREAM
+        LIMITMSG --> STREAM
+        UNAVAIL --> STREAM
+        STREAM --> U["Visitor sees the answer"]
+
+        style GATE fill:#1f6feb22,stroke:#1f6feb
+        style RETRIEVE fill:#7c3aed22,stroke:#7c3aed
+        style GENERATE fill:#16a34a22,stroke:#16a34a
+    </pre>
+    <p>Nothing in that pipeline is exotic on its own. What makes it a RAG system is the order: the gate runs before a single token is spent, retrieval runs before the model ever sees the question, and the model is never trusted with an answer it wasn't handed the facts for. Retrieve, augment, generate, those three middle stages are the whole idea behind RAG. The gate and the delivery step exist because a real feature has to survive the public internet, not just a demo.</p>
+
+    <h2>Retrieval, without a vector database</h2>
+    <p>Most RAG tutorials reach for embeddings and a vector database first. For a knowledge base of a few dozen short facts about one person, that's more machinery than the problem needs. The system scores each entry by how many meaningful words it shares with the question, ranks them, and hands the model the strongest matches.</p>
+    <pre class="mermaid">
+    flowchart LR
+        QQ["'Is he any good?'"] --> T["Strip to meaningful words"]
+        T --> S["Score every entry by&lt;br/&gt;keyword overlap"]
+        S --> RANK["Rank highest to lowest"]
+        RANK --> TOP["Take the top few"]
+        TOP --> FLOOR["Always include one&lt;br/&gt;contact-info entry"]
+        FLOOR --> CTX["Final context handed&lt;br/&gt;to the model"]
+    </pre>
+    <p>A strict keyword filter is unforgiving: a question like "is he any good?" shares no words with anything in the knowledge base, so the system ranks rather than filters, always surfacing the best available matches even when the match is weak. One category, contact information, is always guaranteed a seat regardless of score, since the model is instructed to point people there and needs to actually be able to.</p>
+
+    <h2>Keeping it honest</h2>
+    <p>A language model will answer a question it has no answer for just as fluently as one it does. The fix has nothing to do with retrieval: it's a system prompt that states plainly what the assistant is for, what to do when it doesn't know something, and what to refuse. Trusting that instruction only happened after testing it on purpose, with questions it should decline and questions it has no facts for.</p>
+
+    <h2>Why Groq</h2>
+    <p>I picked Groq for one honest reason: it's free, fast, and more than enough for a portfolio site that gets a trickle of visitors, not a product with a growth target. I wasn't going to pay a monthly bill so a chatbot answering questions about my resume could feel more premium than it needs to. Groq's free tier covers this comfortably, and their inference is genuinely fast, so the typing indicator on this page barely gets to show itself before the answer lands.</p>
+    <p>The integration doesn't actually speak to Groq specifically, though. It speaks the same chat-completions shape that OpenAI, OpenRouter, Together and a handful of other providers all implement, with the base URL, model name and API key coming from configuration rather than code. If Groq ever stops being the right fit, or retires the model I'm using (they already have once), switching is an environment variable, not a rewrite.</p>
+
+    <h2>Rate limiting: two birds, one stone</h2>
+    <p>Every question is capped twice, once by IP and once by session. The reason I built both wasn't really about traffic volume. It's that a public endpoint which triggers a paid API call is an open invitation, whether that's a curious visitor mashing the send button or a bot finding the endpoint and hammering it. Without a limit, either one can burn through a free-tier quota that's meant to last a day in a few minutes.</p>
+    <p>The nice part is that the same limit solves two problems with one mechanism. It protects the endpoint from anything that looks like abuse, and it caps what a single visitor can cost, which matters a lot more on a free tier with a hard token ceiling than it would on a metered enterprise plan. I didn't have to build a separate abuse-control system and a separate cost-control system. One number, checked in two places, does both jobs.</p>
+    <p>The retrieval cap does something similar on the input side. Capping how many knowledge base facts get sent per question, instead of sending the whole knowledge base every time, measured out to a 48% cut in average tokens per question. Between the two, the same free tier goes a lot further than it would sending everything, to everyone, with no limit.</p>
+
+    <h2>My limitations and preferences</h2>
+    <p>This is deliberately not the most capable chatbot I could have built, and I'd rather be upfront about where I chose simple over impressive.</p>
+    <ul>
+      <li><strong>No memory between questions.</strong> Every question is answered fresh. If someone asks a follow-up that only makes sense in light of what they asked before, the model has no idea what came before. Adding conversation history is a small change; I just haven't needed it yet for the questions this bot actually gets.</li>
+      <li><strong>No streaming.</strong> The answer arrives all at once, not word by word. I like the simplicity of appending a finished message more than I like the perception of speed a typing effect gives you.</li>
+      <li><strong>A hand-curated knowledge base, not a document pipeline.</strong> There's no PDF upload and nothing syncs from my resume or LinkedIn automatically. Every fact in there, I wrote and put in myself. That's a limitation if this ever needs to scale past one person's facts, and a non-issue for exactly how small this actually is.</li>
+      <li><strong>One provider, no automatic failover.</strong> If Groq has an outage, the chat says it's temporarily unavailable rather than silently falling back to a second provider. For a portfolio feature, a visitor waiting a few minutes and trying again is a perfectly acceptable failure mode.</li>
+    </ul>
+    <p>None of these are things I don't know how to build. They're things I decided weren't worth building yet, for a feature whose entire job is to answer a few dozen questions about one person, honestly, without costing me anything.</p>
+
+    <h2>Key takeaways</h2>
+    <ul>
+      <li>Retrieval doesn't require a vector database to start. Keyword scoring, ranked rather than filtered, is enough for a small, well-scoped knowledge base.</li>
+      <li>Grounding a model in data solves what it knows. A system prompt is what makes it admit what it doesn't.</li>
+      <li>Treat an LLM API like any other external dependency: rate-limit it, abstract the provider, and expect the model name to change under you.</li>
+      <li>A single rate limit can solve an abuse problem and a cost problem at the same time, when the thing you're limiting also costs money per call.</li>
+      <li>A limitation you chose on purpose is not the same thing as a limitation you didn't notice. Writing down which one each of yours is tends to be worth the honesty.</li>
+    </ul>
+
+    <p><em>The chatbot described here is live on this site. Ask it something.</em></p>
