@@ -938,6 +938,86 @@ offenses. Confirmed both `:thumb` and `:hero` variants render as real WebP
 images before calling it done — all three case-study slots now have real
 cover images.
 
+### 2026-09-14 (later still — hero polish before deployment: tagline, availability badge, byline avatar)
+
+Daffa's last round of UI feedback before moving to deployment, three items:
+
+- **Tagline.** "Seasoned Backend Engineer" → "Software Engineer · Backend-
+  Focused". Broadens what he shows up as while keeping the backend
+  specialization visible. Updated in the actual view (`_hero.html.erb`) and
+  in CLAUDE.md's own spec (project overview line and the Hero section
+  bullet) — the spec described the old copy as the intended design, and
+  leaving it stale would read as a real design requirement to any future
+  session, not a copy choice already superseded.
+- **Availability badge**, added new: a small pill above "Hello, I'm" with a
+  pulsing green dot, reading "Open to new opportunities from Sep 25" by
+  default. His own framing: signal availability without stating why
+  ("laid off" specifically), since the reason reads as negative and isn't
+  what a visitor needs to know. Built as `SiteSetting[:availability_message]`
+  rather than hardcoded text, following the exact pattern `cv_url` already
+  established (blank = hidden, editable through the existing admin Site
+  Settings CRUD, re-seeding never overwrites a value once set). Unlike
+  `cv_url`, seeded with a real default rather than staying blank — this is
+  public marketing copy, not a PII document link, so there's nothing to
+  protect by leaving it empty on a fresh install.
+- **Byline avatar**, was an empty grey circle on every article page
+  (screenshot review caught it, not a code trace — this had been blank
+  since before this session's work started, unrelated to any of the recent
+  changes). Reused the hero's own headshot (`profile.jpg.png`, 402×402)
+  rather than asking for a new photo, but didn't just resize the whole
+  frame down: at a 40px avatar size the original composition (subject small
+  within a wide shot, laptop and wall art visible) would have read as an
+  unrecognisable blur. Cropped to head-and-shoulders first (`sharp`, same
+  scratch-dir approach as every other image conversion this session), then
+  resized to 200×200 — sharp enough for a ~5x retina display of the 40px
+  slot, small enough to stay a trivial asset (23KB). The crop's top corners
+  land in the original photo's own baked-in circular alpha-mask edge, which
+  looks like a faint arc at full square size; verified with a quick
+  composited-circle mask matching the page's actual `rounded-full` clip that
+  it falls entirely outside the visible circle, so it's a non-issue in
+  practice, not something masked over and hoped away.
+- 156 tests (+2: the availability badge's hidden/shown paths, mirroring the
+  existing `cv_url` test pattern), 0 rubocop offenses, 0 brakeman warnings.
+  Confirmed all three live: badge text and pulse animation present, tagline
+  text updated, avatar rendering (and correctly circle-clipped) on the
+  article show page.
+
+### 2026-09-14 (later still — badge trimmed, CV button turned on)
+
+Two quick follow-ups to close out the round above:
+
+- **Badge copy trimmed**: "Open to new opportunities from Sep 25" → "Open to
+  new opportunities" — the date wasn't earning its place. `db/seeds/site_settings.yml`
+  updated, plus the already-seeded dev-DB row (seeding's `update_existing: false`
+  means the YAML change alone wouldn't have touched an existing value — same
+  gotcha as always with this file, fixed with a direct `SiteSetting[]=`).
+- **The "Download CV" button already existed in the code** — Daffa asked for
+  "one more CTA besides Get In Touch, a resume download," not realising
+  `_hero.html.erb` already had exactly that, gated on `SiteSetting[:cv_url]`
+  and blank (hence invisible) since Batch 1. So this needed zero new UI code,
+  only a working link.
+- **The résumé PDF itself never touched this repo**, per CLAUDE.md's own
+  standing rule (PII, permanent in git history). Daffa uploaded it to Google
+  Drive himself and shared a `/view` link; verified with `curl -IL` that
+  Drive's `uc?export=download&id=<FILE_ID>` form of that link actually serves
+  a real `Content-Disposition: attachment` download (not just Drive's
+  preview page) before using it — small files skip Drive's virus-scan
+  interstitial, which is the thing that would have broken this. Set via
+  `SiteSetting[:cv_url] =` directly, matching the console-only pattern this
+  setting has always used; nothing new committed to the seed file or the
+  YAML, by design.
+- **This is dev-database-only right now.** `cv_url` lives in the database,
+  not in code or seeds, so this change does not travel with a deploy the way
+  a commit would. **After deployment, the same `SiteSetting[:cv_url] =`
+  needs to be run again against the production database** (Rails console on
+  Railway, or simpler: the admin Site Settings page already built in
+  Batch 4, once signed in on the live site) — otherwise the button stays
+  invisible in production even though this branch's code is fully ready for
+  it. Worth its own line in whatever deployment checklist comes next.
+- No PR needed for this entry — everything here is either already covered
+  by PR #61's existing commits (the badge-text drop) or is pure runtime data
+  (the CV link), never code.
+
 ### 2026-08-23 (later — knowledge base rewrite, and three retrieval bugs it exposed)
 
 Daffa rewrote `db/seeds/knowledge_entries.yml` himself with current,

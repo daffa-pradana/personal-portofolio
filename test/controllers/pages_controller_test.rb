@@ -70,4 +70,19 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "a[href=?][download]", "/daffa-cv.pdf", text: "Download CV"
   end
+
+  test "hides the availability badge when no availability_message is configured" do
+    get root_path
+
+    assert_select ".animate-ping", count: 0
+  end
+
+  test "shows the availability badge with the configured message" do
+    SiteSetting[:availability_message] = "Open to new opportunities"
+
+    get root_path
+
+    assert_select "div", text: "Open to new opportunities"
+    assert_select ".animate-ping"
+  end
 end

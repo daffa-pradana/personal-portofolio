@@ -11,5 +11,6 @@ class PagesController < ApplicationController
                            .limit(3)
 
     @cv_url = SiteSetting[:cv_url]
+    @availability_message = SiteSetting[:availability_message]
   end
 end
