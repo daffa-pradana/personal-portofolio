@@ -714,16 +714,40 @@ em-dashes, a short "Key takeaways" list.
   matching the constraint from the Jira article's second content pass.
   Both re-verified through mermaid's `parse()` in the same headless jsdom
   setup used for the Jira article.
-- **Cover image not yet attached** — Daffa is generating one himself. Once
-  it exists, dropping it at `db/seeds/images/h5-goal-custom-order.<ext>`
-  auto-attaches on the next `db:seed`, same convention as the Jira cover
-  (see `seeds.rb`); no code change needed for that step. If it's an SVG,
-  expect the same `image/svg+xml` → forced-download issue hit on the Jira
-  cover, and the same fix (rasterize to PNG) — see the "cover image was
-  still broken in a real browser" entry above for why.
 - Reading time: **3 min**, confirmed rendered on the live page. 154 tests,
   0 rubocop offenses, 0 brakeman warnings (no new tests needed — no new
   application code, just seed content).
+
+### 2026-09-14 — custom-ordering article: cover attached, formula restored
+
+Two pieces of Daffa's follow-up feedback on the same article:
+
+- **Cover image.** He generated `tmp/h5-custom-order-cover.svg` (git-ignored,
+  his input). Same SVG-inline-serving problem as the Jira cover was already
+  known from last time, so rasterized it to PNG the same way before it ever
+  reached the app (`sharp` in a scratch dir, no libvips needed for that
+  step). Copied to `db/seeds/images/h5-goal-custom-order.png` and it
+  auto-attached on the next `db:seed`, exactly per the existing convention —
+  no code changes needed this time, since the SVG-variant fix and the
+  cover-seeding convention were already built for the Jira article.
+- **"I didn't find any formula that depicts what I'm doing here."** Fair —
+  the gap-based ranking formula (`new_rank = (rank_before + rank_after) / 2`)
+  is the one piece of real algorithmic substance in the source doc, and it's
+  a generic technique (fractional/gap-based indexing), not proprietary
+  implementation detail, so it should never have been cut. Added it twice:
+  as literal text in a `<pre><code>` block in "How it's built", and as the
+  label on the gap-based-ranking diagram node (previously just said "midpoint
+  of its two neighbours", which described the formula without showing it).
+- **This session's sandbox reset overnight** (new day, `/tmp` wiped) —
+  the isolated conda-forge libvips from the previous session
+  (`/tmp/vips_env`) was gone, so the first attempt to verify the new cover's
+  image variant hit the exact "no libvips" `NoMethodError` this project has
+  hit before. Rebuilt the same way (`micromamba` + conda-forge, ~5 min),
+  re-verified both the `:thumb` (800×500) and `:hero` (1080×675) variants
+  render as real PNGs before calling it done. Nothing persistent was
+  affected — this only ever lived in `/tmp`, never on the system or in the
+  repo.
+- 154 tests still green (no new application code), 0 rubocop offenses.
 
 ### 2026-08-23 (later — knowledge base rewrite, and three retrieval bugs it exposed)
 

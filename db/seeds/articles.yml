@@ -130,12 +130,14 @@
             N1["Move one item"] --> N2["Every row after it&lt;br/&gt;must shift"] --> N3["Writes grow with&lt;br/&gt;list length"]
         end
         subgraph GAP["Gap-based float rank"]
-            G1["Move one item"] --> G2["new rank = midpoint of&lt;br/&gt;its two neighbours"] --> G3["One row written,&lt;br/&gt;regardless of list length"]
+            G1["Move one item"] --> G2["new_rank = (rank_before +&lt;br/&gt;rank_after) / 2"] --> G3["One row written,&lt;br/&gt;regardless of list length"]
         end
     </pre>
 
     <h2>How it's built</h2>
-    <p>Each item gets a rank instead of a position, a float that sits between its two neighbours. Inserting an item becomes one row written, not the whole list rewritten. Paginating through the list uses a cursor keyed on that rank rather than an offset, since offset pagination breaks the moment anything moves out from under it. The ranks slowly lose precision as the same region gets split again and again, so a scheduled job periodically re-spreads them back to even gaps rather than checking on every write. Backfilling ranks for existing data runs as a background job too, not a migration, so it never holds a platform-wide transaction open.</p>
+    <p>Each item gets a rank instead of a position, a float that sits between its two neighbours. Moving an item into a new spot means computing one new rank and writing one row:</p>
+    <pre><code>new_rank = (rank_before + rank_after) / 2</code></pre>
+    <p>No cascade, no rewriting everything after it. Paginating through the list uses a cursor keyed on that same rank rather than an offset, since offset pagination breaks the moment anything moves out from under it. The ranks slowly lose precision as the same region gets split again and again, so a scheduled job periodically re-spreads them back to even gaps rather than checking on every write. Backfilling ranks for existing data runs as a background job too, not a migration, so it never holds a platform-wide transaction open.</p>
 
     <h2>What production taught me</h2>
     <p>Months after shipping, two people reordering the same list at the same time exposed a race the design hadn't accounted for.</p>
