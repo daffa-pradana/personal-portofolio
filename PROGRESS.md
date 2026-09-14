@@ -982,6 +982,42 @@ Daffa's last round of UI feedback before moving to deployment, three items:
   text updated, avatar rendering (and correctly circle-clipped) on the
   article show page.
 
+### 2026-09-14 (later still — badge trimmed, CV button turned on)
+
+Two quick follow-ups to close out the round above:
+
+- **Badge copy trimmed**: "Open to new opportunities from Sep 25" → "Open to
+  new opportunities" — the date wasn't earning its place. `db/seeds/site_settings.yml`
+  updated, plus the already-seeded dev-DB row (seeding's `update_existing: false`
+  means the YAML change alone wouldn't have touched an existing value — same
+  gotcha as always with this file, fixed with a direct `SiteSetting[]=`).
+- **The "Download CV" button already existed in the code** — Daffa asked for
+  "one more CTA besides Get In Touch, a resume download," not realising
+  `_hero.html.erb` already had exactly that, gated on `SiteSetting[:cv_url]`
+  and blank (hence invisible) since Batch 1. So this needed zero new UI code,
+  only a working link.
+- **The résumé PDF itself never touched this repo**, per CLAUDE.md's own
+  standing rule (PII, permanent in git history). Daffa uploaded it to Google
+  Drive himself and shared a `/view` link; verified with `curl -IL` that
+  Drive's `uc?export=download&id=<FILE_ID>` form of that link actually serves
+  a real `Content-Disposition: attachment` download (not just Drive's
+  preview page) before using it — small files skip Drive's virus-scan
+  interstitial, which is the thing that would have broken this. Set via
+  `SiteSetting[:cv_url] =` directly, matching the console-only pattern this
+  setting has always used; nothing new committed to the seed file or the
+  YAML, by design.
+- **This is dev-database-only right now.** `cv_url` lives in the database,
+  not in code or seeds, so this change does not travel with a deploy the way
+  a commit would. **After deployment, the same `SiteSetting[:cv_url] =`
+  needs to be run again against the production database** (Rails console on
+  Railway, or simpler: the admin Site Settings page already built in
+  Batch 4, once signed in on the live site) — otherwise the button stays
+  invisible in production even though this branch's code is fully ready for
+  it. Worth its own line in whatever deployment checklist comes next.
+- No PR needed for this entry — everything here is either already covered
+  by PR #61's existing commits (the badge-text drop) or is pure runtime data
+  (the CV link), never code.
+
 ### 2026-08-23 (later — knowledge base rewrite, and three retrieval bugs it exposed)
 
 Daffa rewrote `db/seeds/knowledge_entries.yml` himself with current,
