@@ -864,6 +864,49 @@ its content.
   old blog URL now 404s, the landing page's three project cards resolve to
   three distinct titles, and both diagrams render.
 
+### 2026-09-14 (later still — RAG article expanded: no self-censorship needed here)
+
+Daffa's follow-up, after the 3-min trim above: this one's different from the
+two employer case studies. Every detail here is his own feature on his own
+site, so the "cut anything that reads like TMI" instinct from the Jira/
+custom-ordering articles doesn't apply — going longer and more detailed is
+fine. He asked for three specific additions: the *whole* system diagram (not
+the simplified 3-step version), a section on why Groq specifically, and a
+section on his own limitations and preferences, plus an explicit callout
+that per-visitor rate limiting solves both an abuse problem and a cost
+problem with one mechanism ("two birds, one stone", his framing).
+
+- **Replaced the simplified retrieve/augment/generate diagram with the full
+  pipeline**: four subgraphs (abuse/cost gate, retrieval, generation,
+  delivery), the per-IP and per-session limits as real branching nodes, and
+  all three response paths (success, provider rate-limited, provider
+  unavailable) shown explicitly rather than glossed over. This is the most
+  structurally complex diagram in any of the three case studies so far
+  (nested subgraphs + multiple conditional branches) — re-verified through
+  mermaid's `parse()` specifically because of that, not just as a formality.
+- **New "Why Groq" section**: free tier, fast inference, "enough for a
+  portfolio site, not a product with a growth target" — his own reasoning,
+  plus the technical fact that already existed in the code (OpenAI-
+  compatible contract, so switching providers is configuration, not a
+  rewrite) now given as the *reason* the cost decision was safe to make.
+- **New "Rate limiting: two birds, one stone" section**, replacing the old
+  one-paragraph "Keeping it safe to run": the per-IP/per-session limit
+  protects against abuse AND caps per-visitor cost with the same number,
+  checked in two places. Cited the real, already-measured figure from this
+  file's own 2026-09-11 entry (48% cut in average tokens/question from
+  capping retrieval) rather than a vague "saves tokens" — accurate, and
+  no reason to round it off now that exact numbers aren't a proprietary
+  concern.
+- **New "My limitations and preferences" section**: no cross-question
+  memory, no token streaming, a hand-curated knowledge base rather than a
+  document-ingestion pipeline, no automatic provider failover. All four are
+  real, verified against the code (`ChatService#request_body` only ever
+  sends one system + one user message, no history array) rather than
+  asserted from memory.
+- Reading time: 3 min → **7 min**. Confirmed live, along with both diagrams
+  rendering and the new sections present. 154 tests, 0 rubocop offenses,
+  0 brakeman warnings.
+
 ### 2026-08-23 (later — knowledge base rewrite, and three retrieval bugs it exposed)
 
 Daffa rewrote `db/seeds/knowledge_entries.yml` himself with current,
