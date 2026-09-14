@@ -384,8 +384,8 @@ until he's done his own research. Audited 2026-09-12:
 | Slot | Cover image | Body |
 |---|---|---|
 | Project/Case Study 1 (`h5-jira-project-integration`) | ✅ real (`h5-jira-project-integration.png`) | ✅ full write-up, merged |
-| Project/Case Study 2 (`h5-goal-custom-order`) | ⏳ Daffa generating one | ✅ full write-up, 2026-09-13 |
-| Project/Case Study 3 | missing | empty |
+| Project/Case Study 2 (`h5-goal-custom-order`) | ✅ real (`h5-goal-custom-order.png`), merged | ✅ full write-up, merged |
+| Project/Case Study 3 (`rag-ai-chatbot`) | missing | ✅ full write-up, 2026-09-14 |
 
 - [x] ~~Research + write-up for the Jira integration case study~~ — done
       2026-09-13, merged. From Daffa's own research pack at
@@ -407,11 +407,20 @@ until he's done his own research. Audited 2026-09-12:
       the source doc carried into the public page. Cover image not yet
       attached; Daffa is generating one himself, same convention as the
       Jira article (`db/seeds/images/h5-goal-custom-order.<ext>` auto-attaches
-      on next `db:seed` once it exists — see `seeds.rb`).
-- [ ] Daffa to finish researching which project goes in the third slot and
-      gather its cover image + write-up
-- [ ] Attach the custom-ordering cover once Daffa has generated it
-- [ ] Confirm final project list/order once content is ready
+      on next `db:seed` once it exists — see `seeds.rb`). Cover attached
+      2026-09-14 once he provided it — merged.
+- [x] ~~Third slot~~ — done 2026-09-14. Not a new project: repurposed the
+      site's own AI chat feature, which already had an empty `rag-ai-chatbot`
+      case-study placeholder reserved at `position: 3`. See the "system-focused
+      RAG case study" session log entry below for how this article came to be
+      (it started as a personal blog post, then got folded into this existing
+      slot instead of shipping as a fourth, separate article).
+- [ ] Cover image for `rag-ai-chatbot` — none yet, same auto-attach
+      convention as the other two once one exists
+      (`db/seeds/images/rag-ai-chatbot.<ext>`)
+- [x] ~~Confirm final project list/order once content is ready~~ — all three
+      landing-page slots now resolve to distinct, real projects: Jira
+      integration, custom ordering, RAG chatbot.
 
 Custom domain + SSL (previous Batch 4 item) waits until this batch is done —
 no point pointing a real domain at placeholder content.
@@ -807,6 +816,53 @@ the landing page's "My Latest Projects" (that query filters to
   this is a reflective personal essay, not a trimmed technical writeup, and
   wasn't put through the same length-cutting pass.
 - 154 tests still green (no new application code), 0 rubocop offenses.
+
+### 2026-09-14 (later still — the blog post became a system-focused case study instead)
+
+Daffa's next call, on reflection: he wants this on the landing page, which
+means `case_study`, not `blog` (the landing page's "My Latest Projects"
+query only ever includes `case_study`). He also asked for the personal POV
+to shrink to an opening, with the bulk of the article focused on "the
+system" — how the AI and knowledge base actually fit together as RAG.
+
+The important catch, caught before writing anything: this repo already had
+an empty `rag-ai-chatbot` case-study placeholder reserved at `position: 3`
+(visible in this file's own Batch 5 table, "Project/Case Study 3"), for
+this exact feature. Publishing the blog post as a *second*, separate
+`case_study` article about the same chatbot would have meant two case
+studies competing for the landing page's three slots, describing the same
+project. Consolidated instead: rewrote the existing `rag-ai-chatbot` entry
+in place (new title "Architecting a RAG Chatbot for My Own Portfolio", new
+body) and deleted the standalone blog article rather than keeping both.
+Slug, position and CTA (`#chat`) all carried over unchanged from the
+placeholder, so nothing about the reserved slot's identity changed, only
+its content.
+
+- Trimmed the personal narrative from six question-driven sections down to
+  one short "Where it started" paragraph — the workshop, the spark, one
+  line linking it to this feature. Everything else now leads with "The
+  system" and the three technical decisions (keyword retrieval over
+  embeddings, the system-prompt guardrail, rate limiting), matching the
+  structure the two employer case studies converged on.
+- Two new diagrams replacing the prose-heavy explanations: the overall
+  retrieve/augment/generate pipeline (with the rate-limit gate as a real,
+  included step, not glossed over) and the keyword-scoring-with-a-floor
+  mechanism from `KnowledgeRetriever`. Both re-verified through mermaid's
+  `parse()`, same as every other diagram in this file's case studies.
+- **A stale-data trap worth remembering**: `seed_from_yaml(Article, ...)`
+  deliberately does not prune (see `seeds.rb`'s own comment on why — admin
+  edits shouldn't vanish on reseed). Removing the blog article from the
+  YAML did not delete its row; the dev DB still had it until a manual
+  `Article.find_by(slug: ...).destroy!`. Anyone re-seeding from this file
+  after a similar edit needs to check for exactly this, since nothing warns
+  you.
+- Reading time: 6 min → **3 min**, now that it's the same length as the
+  other two converged case studies rather than an uncut personal essay.
+  Still no cover image for this slot — same auto-attach convention
+  (`db/seeds/images/rag-ai-chatbot.<ext>`) once one exists.
+- 154 tests, 0 rubocop offenses, 0 brakeman warnings. Confirmed live: the
+  old blog URL now 404s, the landing page's three project cards resolve to
+  three distinct titles, and both diagrams render.
 
 ### 2026-08-23 (later — knowledge base rewrite, and three retrieval bugs it exposed)
 
