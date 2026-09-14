@@ -385,7 +385,7 @@ until he's done his own research. Audited 2026-09-12:
 |---|---|---|
 | Project/Case Study 1 (`h5-jira-project-integration`) | ✅ real (`h5-jira-project-integration.png`) | ✅ full write-up, merged |
 | Project/Case Study 2 (`h5-goal-custom-order`) | ✅ real (`h5-goal-custom-order.png`), merged | ✅ full write-up, merged |
-| Project/Case Study 3 (`rag-ai-chatbot`) | missing | ✅ full write-up, 2026-09-14 |
+| Project/Case Study 3 (`rag-ai-chatbot`) | ✅ real (`rag-ai-chatbot.webp`) | ✅ full write-up, 2026-09-14 |
 
 - [x] ~~Research + write-up for the Jira integration case study~~ — done
       2026-09-13, merged. From Daffa's own research pack at
@@ -415,12 +415,17 @@ until he's done his own research. Audited 2026-09-12:
       RAG case study" session log entry below for how this article came to be
       (it started as a personal blog post, then got folded into this existing
       slot instead of shipping as a fourth, separate article).
-- [ ] Cover image for `rag-ai-chatbot` — none yet, same auto-attach
-      convention as the other two once one exists
-      (`db/seeds/images/rag-ai-chatbot.<ext>`)
+- [x] ~~Cover image for `rag-ai-chatbot`~~ — done 2026-09-14. Provided as a
+      PNG; converted to WebP before attaching (94% smaller, same visual
+      quality) — see the "RAG cover attached, converted to WebP" session
+      log entry.
 - [x] ~~Confirm final project list/order once content is ready~~ — all three
-      landing-page slots now resolve to distinct, real projects: Jira
-      integration, custom ordering, RAG chatbot.
+      landing-page slots now resolve to distinct, real projects with real
+      covers: Jira integration, custom ordering, RAG chatbot.
+
+**All three Batch 5 case-study slots are now filled with real covers and
+full write-ups.** What's left in this batch is Daffa's own review/merge of
+the open PRs, and the custom-domain/SSL step this batch was blocking.
 
 Custom domain + SSL (previous Batch 4 item) waits until this batch is done —
 no point pointing a real domain at placeholder content.
@@ -906,6 +911,32 @@ problem with one mechanism ("two birds, one stone", his framing).
 - Reading time: 3 min → **7 min**. Confirmed live, along with both diagrams
   rendering and the new sections present. 154 tests, 0 rubocop offenses,
   0 brakeman warnings.
+
+### 2026-09-14 (later still — RAG cover attached, converted to WebP)
+
+Daffa provided `tmp/rag-chatbot-cover.png` (git-ignored, his input) — a
+photorealistic 3D render (knowledge base + question flowing into a "GROQ"
+cube, out to an answer), unlike the flat vector-style covers on the other
+two case studies. Already a real PNG at roughly the right aspect ratio, so
+none of the SVG-specific problems from the Jira cover applied here.
+
+What did apply: the source file was 1.5MB, and even Active Storage's
+`:hero` variant (resized to 1200×675, PNG saver quality 85) stayed at
+1.16MB, since PNG is lossless and this kind of glow/gradient-heavy render
+doesn't compress well losslessly — quite different from the two existing
+covers' flat colour blocks, which is why this problem never came up before.
+Converted to WebP before attaching (`sharp`, quality 85, same scratch-dir
+approach as every other image conversion this session): 1.5MB → 93KB
+source, and the served `:hero` variant landed at 58KB, visually
+indistinguishable at both full size and cropped thumb size. `image/webp` is
+already on `ActiveStorage.content_types_allowed_inline`, so this needed no
+code changes, unlike the SVG case.
+
+Attached via the same `db/seeds/images/<slug>.<ext>` convention as the
+other two covers (`rag-ai-chatbot.webp` this time). 154 tests, 0 rubocop
+offenses. Confirmed both `:thumb` and `:hero` variants render as real WebP
+images before calling it done — all three case-study slots now have real
+cover images.
 
 ### 2026-08-23 (later — knowledge base rewrite, and three retrieval bugs it exposed)
 
