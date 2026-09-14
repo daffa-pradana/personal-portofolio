@@ -16,3 +16,12 @@
 # this is set — a blank value means no button, rather than a dead link.
 - key: cv_url
   value: ~
+
+# Small pill shown above the hero heading when set — a blank value means no
+# badge at all, same "blank = hidden" rule as cv_url. Unlike cv_url, this one
+# ships with a real default rather than staying blank: it's public marketing
+# copy, not PII, so there's nothing to protect by leaving it empty. Edit
+# through the admin UI (or the console) whenever availability changes;
+# re-seeding never overwrites it once set, same as every other setting here.
+- key: availability_message
+  value: "Open to new opportunities from Sep 25"

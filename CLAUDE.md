@@ -5,7 +5,7 @@
 
 ## Project Overview
 
-Personal portfolio website for **Daffa Pradana**, a Seasoned Backend Engineer specializing in Ruby on Rails. This project rebuilds an existing Vue-based portfolio into a Rails fullstack app to better showcase Rails expertise.
+Personal portfolio website for **Daffa Pradana**, a Software Engineer with a backend engineering focus, specializing in Ruby on Rails. This project rebuilds an existing Vue-based portfolio into a Rails fullstack app to better showcase Rails expertise.
 
 ## Tech Stack
 
@@ -190,7 +190,7 @@ value:text
 1. **Navbar** — Fixed top. Logo "Daffa Pradana" left, nav links right: About, Projects, **Articles**, AI Chat, Contacts. Hamburger on mobile.
    - "About", "Projects", "AI Chat", "Contacts" → smooth-scroll anchors within the landing page (same page)
    - "Articles" → real navigation to `/articles` (full index of all published Articles, both types)
-2. **Hero** — Profile photo (rounded), "Hello, I'm Daffa Pradana", "Seasoned Backend Engineer", two CTA buttons (Download CV, Custom).
+2. **Hero** — Optional availability badge (hidden when its site setting is blank), Profile photo (rounded), "Hello, I'm Daffa Pradana", "Software Engineer · Backend-Focused", two CTA buttons (Download CV, Custom).
 3. **About Me** — "Get to know" subtitle, "About Me" heading, paragraph about professional background.
 4. **Projects** — "What I've been working on" subtitle, "My Latest Projects" heading. Card grid showing
    `Article.case_study.published.order(:position).limit(3)` — see Article schema above for card click

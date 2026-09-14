@@ -34,7 +34,9 @@
     <% end %>
 
     <div class="flex items-center gap-3 pb-5 border-b border-gray-200">
-      <div class="flex-none w-10 h-10 rounded-full bg-gray-100"></div>
+      <div class="flex-none w-10 h-10 rounded-full overflow-hidden bg-gray-100">
+        <%= image_tag "profile-avatar.png", alt: "Daffa Pradana", class: "w-full h-full object-cover" %>
+      </div>
       <div class="flex flex-col gap-0.5">
         <span class="text-sm font-semibold text-gray-900">Daffa Pradana</span>
         <span class="text-xs text-gray-400">
