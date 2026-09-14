@@ -48,7 +48,7 @@
     </span>
   </div>
 
-  <div class="flex flex-col gap-2.5 p-5">
+  <div class="flex flex-1 flex-col gap-2.5 p-5">
     <% if show_meta %>
       <div class="flex items-center gap-2 text-xs font-semibold tracking-widest text-gray-400">
         <span><%= article.article_type.titleize.upcase %></span>
@@ -78,7 +78,7 @@
     <% end %>
 
     <% if article.button_label.present? && article.button_url.present? %>
-      <div class="flex mt-1.5">
+      <div class="flex mt-auto pt-1.5">
         <%= link_to article_cta_url(article),
               class: "card-cta relative z-[2] inline-flex items-center gap-1.5 px-3.5 py-2 bg-gray-900 hover:bg-black text-white rounded-full text-xs font-semibold no-underline transition duration-150",
               **article_cta_link_options(article) do %>

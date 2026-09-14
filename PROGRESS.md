@@ -383,24 +383,34 @@ until he's done his own research. Audited 2026-09-12:
 
 | Slot | Cover image | Body |
 |---|---|---|
-| Project/Case Study 1 (`h5-jira-project-integration`) | ✅ real (`h5-jira-cover.svg`) | ✅ full write-up, 2026-09-13 |
-| Project/Case Study 2 | missing | empty |
+| Project/Case Study 1 (`h5-jira-project-integration`) | ✅ real (`h5-jira-project-integration.png`) | ✅ full write-up, merged |
+| Project/Case Study 2 (`h5-goal-custom-order`) | ⏳ Daffa generating one | ✅ full write-up, 2026-09-13 |
 | Project/Case Study 3 | missing | empty |
 
 - [x] ~~Research + write-up for the Jira integration case study~~ — done
-      2026-09-13, from Daffa's own research pack at
+      2026-09-13, merged. From Daffa's own research pack at
       `tmp/jira-integration-case-study/` (git-ignored, his input, not
       committed). Title/subtitle rewritten from the research's suggested
       framing (old copy was generic marketing filler); client names kept
       anonymised per Daffa's call, matching the source article's own
-      convention. See "Jira case study: content + Mermaid diagram support"
-      in the session log below — this pulled in real infrastructure changes
-      (Mermaid.js, a sanitizer fix, an SVG-variant fix), not just content.
-- [ ] Daffa to finish researching which projects to feature and gather real
-      cover images + full write-ups for the remaining two slots
-- [ ] Cover image for every published case study
-- [ ] Full body content for every published case study (currently only
-      stubs/placeholders)
+      convention. Went through three rounds of his feedback after the first
+      draft — see the three "Jira case study" session log entries below for
+      what changed and why (content length, proprietary detail, tone). Also
+      pulled in real infrastructure changes along the way: Mermaid.js
+      support, an Action Text sanitizer fix, an SVG-variant fix, and a
+      reading-time calculation fix.
+- [x] ~~Research + write-up for the custom-ordering case study~~ — done
+      2026-09-13, from `tmp/custom-ordering-case-study.md` (git-ignored,
+      Daffa's input). Written directly in the shorter, diagram-forward,
+      no-proprietary-detail style the Jira article converged on after
+      feedback — no PR numbers, job/class names, or Slack/Notion links from
+      the source doc carried into the public page. Cover image not yet
+      attached; Daffa is generating one himself, same convention as the
+      Jira article (`db/seeds/images/h5-goal-custom-order.<ext>` auto-attaches
+      on next `db:seed` once it exists — see `seeds.rb`).
+- [ ] Daffa to finish researching which project goes in the third slot and
+      gather its cover image + write-up
+- [ ] Attach the custom-ordering cover once Daffa has generated it
 - [ ] Confirm final project list/order once content is ready
 
 Custom domain + SSL (previous Batch 4 item) waits until this batch is done —
@@ -675,6 +685,96 @@ listed tech stack tags, not narrated in prose.
   Not aiming for a specific number here — this is just what's left once the
   proprietary and overly-granular detail is gone. 154 tests, 0 rubocop
   offenses. Both remaining diagrams re-verified through mermaid's `parse()`.
+- **Small polish pass on the same article, same day, not logged separately
+  at the time:** removed every em-dash from the body/subtitle (replaced with
+  plain periods/commas/colons — reads less like AI-written prose), and
+  fixed a real CSS gap where `table` was missing from the block-element
+  `margin-top` rule every other tag (`p`/`ul`/`ol`/`blockquote`/`pre`) gets,
+  so a table right under a heading (like "At a glance") had no space above
+  it. Affects every article with a table, not just this one.
+
+### 2026-09-13 (later still — second article: custom-ordering case study)
+
+Same treatment as the Jira article's *final* converged style (short,
+diagram-forward, no proprietary detail) applied directly from the start
+this time, from `tmp/custom-ordering-case-study.md` (git-ignored, Daffa's
+research). Skipped the three-round trim this file went through for the
+Jira article — went straight to the end state: 2 diagrams, no PR
+numbers/job-class-names/Slack-Notion-links from the source doc, no
+em-dashes, a short "Key takeaways" list.
+
+- Title/subtitle rewritten from the source doc's own framing ("Drag-and-drop
+  ordering that survives concurrency" was too good a phrase not to reuse as
+  the title). `tags` kept as already seeded (Ruby on Rails, PostgreSQL,
+  Sidekiq) — accurate to the source doc's stack.
+- The two diagrams: a naive-vs-gap-based-ranking comparison (the core "why
+  this is hard, here's the design" insight) and a sequence diagram of the
+  concurrency race production actually hit (two concurrent reorders
+  computing the same midpoint). Both generic — no real class/job names,
+  matching the constraint from the Jira article's second content pass.
+  Both re-verified through mermaid's `parse()` in the same headless jsdom
+  setup used for the Jira article.
+- Reading time: **3 min**, confirmed rendered on the live page. 154 tests,
+  0 rubocop offenses, 0 brakeman warnings (no new tests needed — no new
+  application code, just seed content).
+
+### 2026-09-14 — custom-ordering article: cover attached, formula restored
+
+Two pieces of Daffa's follow-up feedback on the same article:
+
+- **Cover image.** He generated `tmp/h5-custom-order-cover.svg` (git-ignored,
+  his input). Same SVG-inline-serving problem as the Jira cover was already
+  known from last time, so rasterized it to PNG the same way before it ever
+  reached the app (`sharp` in a scratch dir, no libvips needed for that
+  step). Copied to `db/seeds/images/h5-goal-custom-order.png` and it
+  auto-attached on the next `db:seed`, exactly per the existing convention —
+  no code changes needed this time, since the SVG-variant fix and the
+  cover-seeding convention were already built for the Jira article.
+- **"I didn't find any formula that depicts what I'm doing here."** Fair —
+  the gap-based ranking formula (`new_rank = (rank_before + rank_after) / 2`)
+  is the one piece of real algorithmic substance in the source doc, and it's
+  a generic technique (fractional/gap-based indexing), not proprietary
+  implementation detail, so it should never have been cut. Added it twice:
+  as literal text in a `<pre><code>` block in "How it's built", and as the
+  label on the gap-based-ranking diagram node (previously just said "midpoint
+  of its two neighbours", which described the formula without showing it).
+- **This session's sandbox reset overnight** (new day, `/tmp` wiped) —
+  the isolated conda-forge libvips from the previous session
+  (`/tmp/vips_env`) was gone, so the first attempt to verify the new cover's
+  image variant hit the exact "no libvips" `NoMethodError` this project has
+  hit before. Rebuilt the same way (`micromamba` + conda-forge, ~5 min),
+  re-verified both the `:thumb` (800×500) and `:hero` (1080×675) variants
+  render as real PNGs before calling it done. Nothing persistent was
+  affected — this only ever lived in `/tmp`, never on the system or in the
+  repo.
+- 154 tests still green (no new application code), 0 rubocop offenses.
+
+### 2026-09-14 (later — CTA buttons weren't aligned across cards)
+
+Daffa's screenshot review of the landing page: all three project cards now
+had a "Product Page"/"Try Here!" button, but they sat at different heights,
+following each card's own content length (a two-line title pushed the button
+lower than a one-line one) instead of lining up along the bottom of the row.
+
+Root cause was a real gap in `articles/_card.html.erb`, shared by the
+landing page's "My Latest Projects" section and the `/articles` index: the
+grid already stretches every card to the row's tallest height (CSS Grid's
+default `align-items: stretch`), but the card's inner content block
+(`flex flex-col`) only ever sized itself to its own content — nothing told
+it to claim the extra stretched space, so the button rendered right after
+the tags with no relationship to the card's actual bottom edge.
+
+Fixed with the standard two-part Flexbox pattern: `flex-1` on the content
+block (so it actually fills the stretched card height) plus `mt-auto` on the
+button's wrapper (so it's pushed to the bottom of that now-taller
+container, however much space is above it). Affects both card grids, not
+just this branch's two articles — any current or future card with a CTA
+benefits. Couldn't get a browser screenshot to confirm the pixel result (no
+chromium-cli or installable browser in this sandbox, same limitation noted
+earlier in this file); verified instead that the compiled classes reached
+the rendered HTML on all three cards, and reasoned through the mechanics,
+which are standard, well-defined Flexbox behavior. 154 tests, 0 rubocop
+offenses.
 
 ### 2026-08-23 (later — knowledge base rewrite, and three retrieval bugs it exposed)
 
