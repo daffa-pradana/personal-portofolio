@@ -749,6 +749,33 @@ Two pieces of Daffa's follow-up feedback on the same article:
   repo.
 - 154 tests still green (no new application code), 0 rubocop offenses.
 
+### 2026-09-14 (later — CTA buttons weren't aligned across cards)
+
+Daffa's screenshot review of the landing page: all three project cards now
+had a "Product Page"/"Try Here!" button, but they sat at different heights,
+following each card's own content length (a two-line title pushed the button
+lower than a one-line one) instead of lining up along the bottom of the row.
+
+Root cause was a real gap in `articles/_card.html.erb`, shared by the
+landing page's "My Latest Projects" section and the `/articles` index: the
+grid already stretches every card to the row's tallest height (CSS Grid's
+default `align-items: stretch`), but the card's inner content block
+(`flex flex-col`) only ever sized itself to its own content — nothing told
+it to claim the extra stretched space, so the button rendered right after
+the tags with no relationship to the card's actual bottom edge.
+
+Fixed with the standard two-part Flexbox pattern: `flex-1` on the content
+block (so it actually fills the stretched card height) plus `mt-auto` on the
+button's wrapper (so it's pushed to the bottom of that now-taller
+container, however much space is above it). Affects both card grids, not
+just this branch's two articles — any current or future card with a CTA
+benefits. Couldn't get a browser screenshot to confirm the pixel result (no
+chromium-cli or installable browser in this sandbox, same limitation noted
+earlier in this file); verified instead that the compiled classes reached
+the rendered HTML on all three cards, and reasoned through the mechanics,
+which are standard, well-defined Flexbox behavior. 154 tests, 0 rubocop
+offenses.
+
 ### 2026-08-23 (later — knowledge base rewrite, and three retrieval bugs it exposed)
 
 Daffa rewrote `db/seeds/knowledge_entries.yml` himself with current,
