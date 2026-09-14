@@ -24,4 +24,4 @@
 # through the admin UI (or the console) whenever availability changes;
 # re-seeding never overwrites it once set, same as every other setting here.
 - key: availability_message
-  value: "Open to new opportunities from Sep 25"
+  value: "Open to new opportunities"

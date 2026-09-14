@@ -78,11 +78,11 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "shows the availability badge with the configured message" do
-    SiteSetting[:availability_message] = "Open to new opportunities from Sep 25"
+    SiteSetting[:availability_message] = "Open to new opportunities"
 
     get root_path
 
-    assert_select "div", text: "Open to new opportunities from Sep 25"
+    assert_select "div", text: "Open to new opportunities"
     assert_select ".animate-ping"
   end
 end
