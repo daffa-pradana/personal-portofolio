@@ -348,9 +348,10 @@ otherwise the bot itself would eventually tell visitors something false.
 - [x] GitHub Actions CI pipeline — was already done since Batch 1
       (`.github/workflows/ci.yml`: lint/scan_ruby/scan_js/test on every PR),
       just never checked off here.
-- [ ] Custom domain + SSL on Railway — blocked, Railway deploy paused since
-      2026-08-08; first step is resuming it (Daffa is subscribing to the
-      Hobby plan)
+- [x] ~~Custom domain + SSL on Railway~~ — superseded 2026-09-15. Railway
+      itself is abandoned as the deploy target, not just paused — see
+      "Deployment: Railway abandoned, moving to Biznet Gio + Kamal" below for
+      the full plan and why.
 - [x] Final responsive QA across devices — checked desktop (1024px), tablet
       (800px), and mobile (iPhone SE, 375px) across the landing page,
       `/articles`, an article show page, and the whole admin section. One
@@ -487,11 +488,105 @@ merely likely.
 
 ---
 
+## Deployment: Railway abandoned, moving to Biznet Gio + Kamal
+
+Decided 2026-09-15, to be executed 2026-09-16. Railway itself is the
+problem, not just the pause: it bills in USD through Stripe, Stripe has no
+PayPal or GoPay support, and Daffa's only card (a BSI Visa **debit** card)
+gets declined as an international transaction — a bank-side block, not a
+Railway bug, confirmed by checking Railway's own support threads. No amount
+of waiting fixes that; a different target does.
+
+**Why Biznet Gio.** It's an Indonesian VPS + domain provider billing through
+Midtrans — QRIS (GoPay/OVO/Dana/ShopeePay), bank transfer, and BSI virtual
+account all work natively, in IDR. Same account covers both the server and
+the domain, so there's exactly one Indonesian payment relationship instead
+of juggling several foreign ones.
+
+**Why this doesn't require reworking the app.** Kamal is already in the
+Gemfile and `config/deploy.yml` is already scaffolded (just unconfigured) —
+it was there from the Rails 8 default generator, unused, since Railway
+doesn't need it. Kamal exists specifically to deploy a Dockerized Rails app
+to a bare VPS over SSH: it builds the image, runs Postgres as an
+"accessory" container, and gets Let's Encrypt SSL through kamal-proxy
+automatically. The gap between "PaaS" and "VPS" is a config file, not new
+application code.
+
+### Decided
+
+- **Server:** Biznet Gio NEO Lite, 2 vCPU / 2 GB RAM (~Rp87,000/mo,
+  ~$5.30). The 1 GB tier was ruled out — Rails + Postgres + Docker +
+  occasional libvips image processing is tight in 1 GB and risks the box
+  OOM-killing something.
+- **Domain registrar:** Biznet Gio's own NEO Domain (ICANN- and
+  PANDI-accredited) — same account, same Midtrans billing as the server,
+  rather than a separate registrar and a second payment method to solve.
+- **File storage:** production `config/storage.yml` moves from the
+  `cloudflare` (R2) service back to `local`, with Kamal mounting a
+  persistent volume for `storage/`. R2 only ever existed to solve Railway's
+  ephemeral filesystem wiping uploads on every redeploy (Batch 4); a VPS
+  you keep doesn't have that problem, so R2 — another foreign-billed
+  account — is no longer needed at all.
+- **Container registry:** GitHub Container Registry (ghcr.io), free, no new
+  account — Kamal pushes the built image there and the VPS pulls from it.
+- **Database:** Postgres runs as a Kamal accessory on the same box, with
+  its own persistent volume for the data directory. Same single-Postgres-
+  for-everything design this app already uses (primary/queue/cache/cable
+  via Solid Stack) — no architecture change, just where the container runs.
+
+### Open — needs Daffa before any of this can start
+
+- [ ] **Domain name not chosen yet.** `.com` registers instantly; `.id` /
+      `.co.id` requires KTP/NPWP verification through PANDI first, so if
+      considering the latter, start that verification before deploy day.
+- [ ] Biznet Gio account created, payment method added (QRIS/GoPay/bank
+      transfer — anything except a foreign card).
+- [ ] NEO Lite 2 vCPU/2 GB provisioned, public IP noted.
+- [ ] Domain's DNS A record pointed at that IP.
+- [ ] SSH access for the first `bin/kamal setup` run — either Claude's
+      public key added to the server's `authorized_keys`, or the root
+      password shared once for that first run only.
+
+### Deploy-day sequence, once the above is in hand
+
+1. `config/storage.yml` — production service `cloudflare` → `local`.
+2. `config/deploy.yml` — real `servers.web` IP, `proxy.host` (the domain),
+   `registry` pointed at ghcr.io, an `accessories.db` block for Postgres
+   with its volume, plus a volume mount for `storage/`.
+3. `.kamal/secrets` — `RAILS_MASTER_KEY`, `GROQ_API_KEY`,
+   `POSTGRES_PASSWORD`, `ADMIN_EMAIL`/`ADMIN_PASSWORD`.
+4. `bin/kamal setup` — first-time provision: installs Docker on the VPS if
+   needed, builds and pushes the image, starts Postgres + Rails, requests
+   the SSL cert.
+5. Seed the server (`bin/kamal app exec "bin/rails db:seed"`) — articles,
+   knowledge base, admin login.
+6. Re-set `SiteSetting[:cv_url]` and `[:availability_message]` against the
+   production database — these live in the database, not in code or seeds,
+   so they do not travel with the deploy (same gotcha flagged when they
+   were first added).
+7. Smoke test the live domain end to end: landing page, `/articles`, an
+   article show page with a Mermaid diagram, the AI chat, admin login.
+
+### If they ask follow-up questions
+
+**Why not fix Railway instead of switching?** The block is the issuing
+bank refusing an international/foreign-currency card-not-present charge —
+Railway's own support threads describe the identical symptom for other
+countries' bank-issued debit cards. A different card might work, but a
+same-country payment rail removes the risk entirely rather than hoping a
+second card clears.
+
+**Does this reduce reliability?** Trades a managed platform for
+self-managed ops: OS updates, disk/memory headroom, and Postgres backups
+become Daffa's job instead of Railway's. NEO Lite's included snapshot
+backups cover most of that gap for a low-traffic personal portfolio; this
+is a real, accepted trade-off, not a hidden one.
+
 ## Reference Info
 
-- **Deployment:** Railway service `personal-portofolio`, region `asia-southeast1`,
-  live at `personal-portofolio-production-cdcf.up.railway.app`. Env vars set:
-  `RAILS_MASTER_KEY`, `DATABASE_URL`.
+- **Deployment:** moving from Railway to Biznet Gio NEO Lite + Kamal — see
+  "Deployment: Railway abandoned, moving to Biznet Gio + Kamal" above for
+  the live plan. Not yet executed as of 2026-09-15.
 - **Real contact info seeded on site:** `daffaarravi@gmail.com`,
   linkedin.com/in/daffaarravi, github.com/daffa-pradana.
 
@@ -1017,6 +1112,42 @@ Two quick follow-ups to close out the round above:
 - No PR needed for this entry — everything here is either already covered
   by PR #61's existing commits (the badge-text drop) or is pure runtime data
   (the CV link), never code.
+
+### 2026-09-15 — Railway abandoned as the deploy target
+
+Daffa hit a real blocker trying to subscribe to Railway's Hobby plan: his
+only card (BSI Visa debit) was declined. Asked whether GoPay was an
+option and whether Biznet Gio (an Indonesian VPS provider) would help.
+
+Researched both properly rather than guessing:
+- **Railway's payment stack**: Stripe-only, no PayPal (repeatedly requested
+  on their own forum, never shipped), no GoPay. The decline pattern matches
+  Railway's own support threads describing the same symptom for other
+  countries' bank-issued debit cards — it's the issuing bank blocking an
+  international card-not-present charge, not a Railway-side fault. No
+  amount of retrying fixes a bank-side block.
+- **Biznet Gio**: confirmed via their own knowledge base that NEO
+  Cloud/NEO Lite bills through Midtrans, which supports QRIS (GoPay/OVO/
+  Dana/ShopeePay), bank transfer, and BSI virtual account — all IDR,
+  all domestic. Also confirmed (separately) that Biznet Gio is itself an
+  ICANN + PANDI accredited registrar (NEO Domain), so the domain can come
+  from the same account instead of a second provider.
+- **Checked the repo before recommending a VPS migration path**: Kamal is
+  already in the Gemfile and `config/deploy.yml` is already scaffolded
+  (unconfigured, a leftover default from `rails new`, since Railway never
+  needed it). That materially changed the recommendation — a bare VPS is
+  normally a much bigger lift than a PaaS, but here it's a config file, not
+  new application code.
+
+Full crystallized plan written up in the new "Deployment: Railway
+abandoned, moving to Biznet Gio + Kamal" section above, plus a checklist
+artifact published for Daffa to work through tomorrow during account
+signups (link shared in chat, not persisted here since artifact URLs
+aren't meaningful outside the conversation). Nothing in the codebase
+changed yet — deploy-day code changes (`storage.yml`, `deploy.yml`,
+`.kamal/secrets`) are listed but deliberately not started, since several
+of them depend on values (the VPS IP, the domain name) that don't exist
+until Daffa completes the account/provisioning steps first.
 
 ### 2026-08-23 (later — knowledge base rewrite, and three retrieval bugs it exposed)
 
