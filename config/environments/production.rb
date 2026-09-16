@@ -21,9 +21,11 @@ Rails.application.configure do
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   # config.asset_host = "http://assets.example.com"
 
-  # Local disk would silently lose every upload on Railway's ephemeral
-  # filesystem across redeploys. See config/storage.yml for the R2 service.
-  config.active_storage.service = :cloudflare
+  # Local disk, backed by a Kamal-managed volume (config/deploy.yml) that
+  # survives redeploys. Was :cloudflare (R2) under Railway, whose container
+  # filesystem was ephemeral and wiped uploads on every redeploy — a VPS
+  # you keep doesn't have that problem, so R2 is no longer needed at all.
+  config.active_storage.service = :local
 
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
   config.assume_ssl = true
@@ -59,7 +61,7 @@ Rails.application.configure do
   # config.action_mailer.raise_delivery_errors = false
 
   # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "example.com" }
+  config.action_mailer.default_url_options = { host: "daffapradana.com" }
 
   # Specify outgoing SMTP server. Remember to add smtp/* credentials via rails credentials:edit.
   # config.action_mailer.smtp_settings = {
