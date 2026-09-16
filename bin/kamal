@@ -24,4 +24,11 @@ end
 require "rubygems"
 require "bundler/setup"
 
+# Kamal parses .kamal/secrets with the dotenv gem's own Dotenv.parse, not as
+# a shell script — a plain `source .env` line inside that file is silently
+# ignored, not executed. Loading .env into the real process environment
+# here, before Kamal starts, is what makes its $VAR references in
+# .kamal/secrets actually resolve.
+require "dotenv/load"
+
 load Gem.bin_path("kamal", "kamal")

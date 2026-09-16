@@ -1,33 +1,30 @@
 # Name of your application. Used to uniquely configure containers.
 service: personal_portofolio
 
-# Name of the container image.
-image: your-user/personal_portofolio
+# Name of the container image. Combined with registry.server below to form
+# the full reference: ghcr.io/daffa-pradana/personal_portofolio.
+image: daffa-pradana/personal_portofolio
 
-# Deploy to these servers.
+# Deploy to these servers. Single box for now — Biznet Gio NEO Lite,
+# 103.89.5.84 — running the app, Postgres (as an accessory below), and the
+# proxy all together.
 servers:
   web:
-    - 192.168.0.1
-  # job:
-  #   hosts:
-  #     - 192.168.0.1
-  #   cmd: bin/jobs
+    - 103.89.5.84
 
-# Enable SSL auto certification via Let's Encrypt and allow for multiple apps on a single web server.
-# Remove this section when using multiple web servers and ensure you terminate SSL at your load balancer.
-#
-# Note: If using Cloudflare, set encryption mode in SSL/TLS setting to "Full" to enable CF-to-app encryption.
+# Let's Encrypt SSL, handled automatically by kamal-proxy. Both the root
+# domain and www resolve here (www is a CNAME to the root in NEO DNS), so
+# both need to be in the certificate.
 proxy:
   ssl: true
-  host: app.example.com
+  host: daffapradana.com,www.daffapradana.com
 
-# Credentials for your image host.
+# Credentials for the image registry — GitHub Container Registry, free,
+# already have the account. Password comes from .kamal/secrets
+# (KAMAL_REGISTRY_PASSWORD, a GitHub PAT with write:packages scope).
 registry:
-  # Specify the registry server, if you're not using Docker Hub
-  # server: registry.digitalocean.com / ghcr.io / ...
-  username: your-user
-
-  # Always use an access token rather than real password when possible.
+  server: ghcr.io
+  username: daffa-pradana
   password:
     - KAMAL_REGISTRY_PASSWORD
 
@@ -35,23 +32,21 @@ registry:
 env:
   secret:
     - RAILS_MASTER_KEY
+    - GROQ_API_KEY
+    - DATABASE_URL
+    - ADMIN_EMAIL
+    - ADMIN_PASSWORD
   clear:
-    # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.
-    # When you start using multiple servers, you should split out job processing to a dedicated machine.
+    # Single server, so Solid Queue's supervisor runs inside the same Puma
+    # process rather than a dedicated job host.
     SOLID_QUEUE_IN_PUMA: true
 
-    # Set number of processes dedicated to Solid Queue (default: 1)
-    # JOB_CONCURRENCY: 3
-
-    # Set number of cores available to the application on each server (default: 1).
-    # WEB_CONCURRENCY: 2
-
-    # Match this to any external database server to configure Active Record correctly
-    # Use personal_portofolio-db for a db accessory server on same machine via local kamal docker network.
-    # DB_HOST: 192.168.0.2
-
-    # Log everything from Rails
-    # RAILS_LOG_LEVEL: debug
+# The non-root user Biznet Gio's Ubuntu image ships by default. Has
+# passwordless sudo (confirmed), which Kamal needs for Docker setup.
+ssh:
+  user: deploy
+  keys: ["~/.ssh/biznet-personal-key"]
+  keys_only: true
 
 # Aliases are triggered with "bin/kamal <alias>". You can overwrite arguments on invocation:
 # "bin/kamal logs -r job" will tail logs from the first server in the job section.
@@ -62,8 +57,10 @@ aliases:
   dbc: app exec --interactive --reuse "bin/rails dbconsole"
 
 
-# Use a persistent storage volume for sqlite database files and local Active Storage files.
-# Recommended to change this to a mounted volume path that is backed up off server.
+# Use a persistent storage volume for Active Storage's local-disk uploads —
+# this is what replaces Cloudflare R2. A VPS you keep doesn't have Railway's
+# ephemeral-filesystem problem, so plain local disk is enough as long as it
+# survives redeploys, which this volume guarantees.
 volumes:
   - "personal_portofolio_storage:/rails/storage"
 
@@ -73,44 +70,36 @@ volumes:
 # version inside the asset_path.
 asset_path: /rails/public/assets
 
-# Configure the image builder.
+# Configure the image builder. Building locally (Daffa's own machine, same
+# x86_64 architecture as the VPS) rather than on the VPS itself — a 2 vCPU/
+# 2 GB box running bundle install + asset precompile while also serving
+# traffic is the kind of resource contention worth avoiding.
 builder:
   arch: amd64
 
-  # # Build image via remote server (useful for faster amd64 builds on arm64 computers)
-  # remote: ssh://docker@docker-builder-server
-  #
-  # # Pass arguments and secrets to the Docker build process
-  # args:
-  #   RUBY_VERSION: ruby-3.3.0
-  # secrets:
-  #   - GITHUB_TOKEN
-  #   - RAILS_MASTER_KEY
-
-# Use a different ssh user than root
-# ssh:
-#   user: app
-
-# Use accessory services (secrets come from .kamal/secrets).
-# accessories:
-#   db:
-#     image: mysql:8.0
-#     host: 192.168.0.2
-#     # Change to 3306 to expose port to the world instead of just local network.
-#     port: "127.0.0.1:3306:3306"
-#     env:
-#       clear:
-#         MYSQL_ROOT_HOST: '%'
-#       secret:
-#         - MYSQL_ROOT_PASSWORD
-#     files:
-#       - config/mysql/production.cnf:/etc/mysql/my.cnf
-#       - db/production.sql:/docker-entrypoint-initdb.d/setup.sql
-#     directories:
-#       - data:/var/lib/mysql
-#   redis:
-#     image: redis:7.0
-#     host: 192.168.0.2
-#     port: 6379
-#     directories:
-#       - data:/data
+# Postgres, running as an accessory on the same box, with its own
+# persistent volume. Same single-Postgres-for-everything design this app
+# already uses (primary/queue/cache/cable via Solid Stack) — just running
+# in a container instead of a managed service.
+accessories:
+  db:
+    image: postgres:16
+    host: 103.89.5.84
+    # Explicit hostname, not Kamal's "personal_portofolio-db" default:
+    # Ruby's URI parser rejects underscores in a URL's host part (a real,
+    # well-known gotcha — RFC2396's host grammar doesn't allow them, even
+    # though Docker's own DNS resolves such names just fine), and
+    # DATABASE_URL needs to survive being parsed as a URI. Hyphens only.
+    service: personal-portofolio-db
+    # Bound to localhost only — reachable from the app container over
+    # Kamal's internal Docker network (as personal-portofolio-db), never
+    # exposed to the public internet.
+    port: "127.0.0.1:5432:5432"
+    env:
+      clear:
+        POSTGRES_USER: personal_portofolio
+        POSTGRES_DB: personal_portofolio_production
+      secret:
+        - POSTGRES_PASSWORD
+    directories:
+      - data:/var/lib/postgresql/data
