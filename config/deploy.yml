@@ -85,8 +85,14 @@ accessories:
   db:
     image: postgres:16
     host: 103.89.5.84
+    # Explicit hostname, not Kamal's "personal_portofolio-db" default:
+    # Ruby's URI parser rejects underscores in a URL's host part (a real,
+    # well-known gotcha — RFC2396's host grammar doesn't allow them, even
+    # though Docker's own DNS resolves such names just fine), and
+    # DATABASE_URL needs to survive being parsed as a URI. Hyphens only.
+    service: personal-portofolio-db
     # Bound to localhost only — reachable from the app container over
-    # Kamal's internal Docker network (as personal_portofolio-db), never
+    # Kamal's internal Docker network (as personal-portofolio-db), never
     # exposed to the public internet.
     port: "127.0.0.1:5432:5432"
     env:
